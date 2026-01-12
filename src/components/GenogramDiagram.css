@@ -1,0 +1,98 @@
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.diagram-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diagram-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.diagram-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.diagram-actions .btn {
+    flex: none;
+    white-space: nowrap;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8e8e8;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.diagram-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.diagram-container {
+    flex: 1;
+    background-color: #f0f4f8;
+}
+
+/* React Flow 스타일 오버라이드 */
+.react-flow__node {
+    cursor: pointer;
+}
+
+/* 기본 노드 선택 스타일 제거 (테두리 등) */
+.react-flow__node:focus,
+.react-flow__node.selected {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.react-flow__controls {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.react-flow__controls-button {
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+
+.react-flow__minimap {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* MiniMap 노드 스타일 커스터마이징 */
+.minimap-node-female {
+    rx: 50%;
+    ry: 50%;
+}
+
+/* Controls 아이콘 진하게 */
+.react-flow__controls-button svg {
+    fill: #333;
+    stroke: #333;
+    opacity: 0.8;
+}
+
+.react-flow__controls-button:hover svg {
+    opacity: 1;
+}
+
+/* React Flow 워터마크 숨기기 */
+.react-flow__attribution {
+    display: none;
+}

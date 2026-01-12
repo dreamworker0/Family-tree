@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대화형 가계도 - Genogram Builder</title>
+  <script src="./go.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #e8e8e8;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      gap: 0;
+    }
+
+    /* 왼쪽 패널 - 입력 폼 */
+    .left-panel {
+      width: 380px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .panel-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #00d9ff;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #7dd3fc;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: linear-gradient(180deg, #00d9ff, #0099cc);
+      border-radius: 2px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      flex: 1;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #e8e8e8;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #00d9ff;
+      box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.15);
+    }
+
+    .form-group select option {
+      background: #1a1a2e;
+      color: #e8e8e8;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #00d9ff;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      font-size: 0.9rem;
+      color: #e8e8e8;
+      cursor: pointer;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      white-space: nowrap;
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d9ff, #0099cc);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 217, 255, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e8e8e8;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff4757, #c0392b);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+    }
+
+    /* 가족 목록 테이블 */
+    .family-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .family-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .family-item:hover {
+      background: rgba(0, 217, 255, 0.1);
+      border-color: rgba(0, 217, 255, 0.3);
+    }
+
+    .family-item.selected {
+      background: rgba(0, 217, 255, 0.2);
+      border-color: #00d9ff;
+    }
+
+    .family-item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gender-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    .gender-male {
+      background: rgba(52, 152, 219, 0.3);
+      color: #3498db;
+      border: 2px solid #3498db;
+    }
+
+    .gender-female {
+      background: rgba(231, 76, 150, 0.3);
+      color: #e74c96;
+      border: 2px solid #e74c96;
+      border-radius: 50%;
+    }
+
+    .family-item-name {
+      font-weight: 500;
+    }
+
+    .family-item-age {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .family-item-status {
+      display: flex;
+      gap: 6px;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(255, 71, 87, 0.2);
+      color: #ff4757;
+    }
+
+    .family-item-delete {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 1.2rem;
+      transition: color 0.2s;
+    }
+
+    .family-item-delete:hover {
+      color: #ff4757;
+    }
+
+    /* 오른쪽 패널 - 가계도 뷰어 */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .diagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .diagram-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .diagram-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .diagram-actions .btn {
+      flex: none;
+      white-space: nowrap;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+
+    #myDiagramDiv {
+      flex: 1;
+      background-color: #f0f4f8;
+    }
+
+    /* 범례 */
+    .legend {
+      display: flex;
+      gap: 20px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .legend-shape {
+      width: 20px;
+      height: 20px;
+    }
+
+    .legend-male {
+      background: #fff;
+      border: 2px solid #919191;
+    }
+
+    .legend-female {
+      background: #fff;
+      border: 2px solid #a1a1a1;
+      border-radius: 50%;
+    }
+
+    .legend-line {
+      width: 30px;
+      height: 3px;
+    }
+
+    .legend-marriage {
+      background: blue;
+    }
+
+    .legend-divorce {
+      background: repeating-linear-gradient(90deg, red 0px, red 6px, transparent 6px, transparent 10px);
+    }
+
+    .legend-death {
+      position: relative;
+      background: #fff;
+      border: 2px solid #919191;
+    }
+
+    .legend-death::after {
+      content: '';
+      position: absolute;
+      width: 28px;
+      height: 2px;
+      background: #d4071c;
+      top: 50%;
+      left: -4px;
+      transform: rotate(-45deg);
+    }
+
+    /* 스크롤바 스타일 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 토스트 메시지 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: rgba(0, 217, 255, 0.9);
+      color: #000;
+      border-radius: 8px;
+      font-weight: 500;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      background: rgba(255, 71, 87, 0.9);
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 왼쪽 패널 - 입력 폼 -->
+    <div class="left-panel">
+      <h1 class="panel-title">🌳 가계도 만들기</h1>
+
+      <!-- 기본 정보 입력 -->
+      <div class="section">
+        <div class="section-title">기본 정보</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>이름</label>
+            <input type="text" id="personName" placeholder="이름 입력">
+          </div>
+          <div class="form-group" style="flex: 0.5;">
+            <label>나이</label>
+            <input type="number" id="personAge" placeholder="나이" min="0" max="150">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>성별</label>
+            <select id="personGender">
+              <option value="M">남성</option>
+              <option value="F">여성</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="personDeceased">
+          <label for="personDeceased">사망</label>
+        </div>
+      </div>
+
+
+
+      <!-- 관계 설정 -->
+      <div class="section">
+        <div class="section-title">가족 관계</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>아버지</label>
+            <select id="personFather">
+              <option value="">선택 안 함</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>어머니</label>
+            <select id="personMother">
+              <option value="">선택 안 함</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>배우자</label>
+            <select id="personSpouse">
+              <option value="">선택 안 함</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>관계 상태</label>
+            <select id="relationStatus">
+              <option value="married">결혼</option>
+              <option value="divorced">이혼</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>형제/자매 (같은 부모 복사)</label>
+            <select id="personSibling">
+              <option value="">선택 안 함</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 속성 마커 (접기/펼치기) -->
+      <details class="section">
+        <summary class="section-title"
+          style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+          <span>속성 마커 (4분면 표시)</span>
+          <span style="font-size: 0.8em; color: #aaa;">▼</span>
+        </summary>
+        <div class="form-row" style="margin-top: 15px;">
+          <div class="form-group">
+            <label>좌상단</label>
+            <select id="attrTL">
+              <option value="">없음</option>
+              <option value="A" style="color:#00af54">● 녹색</option>
+              <option value="B" style="color:#f27935">● 주황</option>
+              <option value="C" style="color:#d4071c">● 빨강</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>우상단</label>
+            <select id="attrTR">
+              <option value="">없음</option>
+              <option value="D" style="color:#70bdc2">● 시안</option>
+              <option value="E" style="color:#fcf384">● 금색</option>
+              <option value="F" style="color:#e69aaf">● 분홍</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>좌하단</label>
+            <select id="attrBL">
+              <option value="">없음</option>
+              <option value="J" style="color:#a3cf62">● 연두</option>
+              <option value="K" style="color:#91a4c2">● 회청</option>
+              <option value="L" style="color:#af70c2">● 자홍</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>우하단</label>
+            <select id="attrBR">
+              <option value="">없음</option>
+              <option value="G" style="color:#08488f">● 파랑</option>
+              <option value="H" style="color:#866310">● 갈색</option>
+              <option value="I" style="color:#9270c2">● 보라</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <!-- 버튼 그룹 -->
+      <div class="btn-group">
+        <button class="btn btn-primary" id="addPersonBtn">➕ 추가</button>
+        <button class="btn btn-secondary" id="updatePersonBtn">✏️ 수정</button>
+        <button class="btn btn-secondary" id="clearFormBtn">🧹 입력 비우기</button>
+      </div>
+
+      <!-- 가족 목록 -->
+      <div class="section" style="margin-top: 20px;">
+        <div class="section-title">가족 구성원 목록</div>
+        <div class="family-list" id="familyList">
+          <!-- 동적으로 생성됨 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 패널 - 가계도 뷰어 -->
+    <div class="right-panel">
+      <div class="diagram-header">
+        <div class="diagram-title">📊 가계도</div>
+        <div class="diagram-actions">
+          <button class="btn btn-secondary" id="layoutBtn">📐 정렬</button>
+          <button class="btn btn-secondary" id="exportBtn">💾 저장</button>
+          <button class="btn btn-secondary" id="saveProjectBtn">📄 프로젝트 저장</button>
+          <button class="btn btn-secondary" id="importBtn">📂 불러오기</button>
+          <input type="file" id="importFile" accept=".json" style="display: none;">
+          <button class="btn btn-danger" id="resetBtn">🔄 초기화</button>
+        </div>
+      </div>
+      <div id="myDiagramDiv"></div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-shape legend-male"></div>
+          <span>남성</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-shape legend-female"></div>
+          <span>여성</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line legend-marriage"></div>
+          <span>결혼</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line legend-divorce"></div>
+          <span>이혼</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-shape legend-death"></div>
+          <span>사망</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 메시지 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========================================
+    // 데이터 관리
+    // ========================================
+    let familyData = [];
+    let nextKey = 1;
+    let selectedPersonKey = null;
+    let myDiagram = null;
+
+    // localStorage 키
+    const STORAGE_KEY = 'genogramFamilyData';
+
+    // localStorage에서 데이터 로드
+    function loadFromStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const data = JSON.parse(saved);
+          familyData = data.familyData || [];
+          nextKey = data.nextKey || 1;
+          return true;
+        }
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+      }
+      return false;
+    }
+
+    // localStorage에 데이터 저장
+    function saveToStorage() {
+      try {
+        const data = {
+          version: '1.0',
+          nextKey: nextKey,
+          familyData: familyData
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.error('데이터 저장 실패:', e);
+      }
+    }
+
+    // 속성 마커 색상
+    function attrFill(a) {
+      switch (a) {
+        case "A": return "#00af54"; // green
+        case "B": return "#f27935"; // orange
+        case "C": return "#d4071c"; // red
+        case "D": return "#70bdc2"; // cyan
+        case "E": return "#fcf384"; // gold
+        case "F": return "#e69aaf"; // pink
+        case "G": return "#08488f"; // blue
+        case "H": return "#866310"; // brown
+        case "I": return "#9270c2"; // purple
+        case "J": return "#a3cf62"; // chartreuse
+        case "K": return "#91a4c2"; // lightgray bluish
+        case "L": return "#af70c2"; // magenta
+        default: return "transparent";
+      }
+    }
+
+    // 남성용 속성 마커 geometry (4분면 사각형)
+    const tlsq = go.Geometry.parse("F M1 1 l19 0 0 19 -19 0z");
+    const trsq = go.Geometry.parse("F M20 1 l19 0 0 19 -19 0z");
+    const brsq = go.Geometry.parse("F M20 20 l19 0 0 19 -19 0z");
+    const blsq = go.Geometry.parse("F M1 20 l19 0 0 19 -19 0z");
+
+    function maleGeometry(a) {
+      switch (a) {
+        case "A": case "B": case "C": return tlsq;
+        case "D": case "E": case "F": return trsq;
+        case "G": case "H": case "I": return brsq;
+        case "J": case "K": case "L": return blsq;
+        default: return tlsq;
+      }
+    }
+
+    // 여성용 속성 마커 geometry (4분면 파이)
+    const tlarc = go.Geometry.parse("F M20 20 B 180 90 20 20 19 19 z");
+    const trarc = go.Geometry.parse("F M20 20 B 270 90 20 20 19 19 z");
+    const brarc = go.Geometry.parse("F M20 20 B 0 90 20 20 19 19 z");
+    const blarc = go.Geometry.parse("F M20 20 B 90 90 20 20 19 19 z");
+
+    function femaleGeometry(a) {
+      switch (a) {
+        case "A": case "B": case "C": return tlarc;
+        case "D": case "E": case "F": return trarc;
+        case "G": case "H": case "I": return brarc;
+        case "J": case "K": case "L": return blarc;
+        default: return tlarc;
+      }
+    }
+
+    // ========================================
+    // GenogramLayout 클래스 (기존 코드 활용)
+    // ========================================
+    class GenogramLayout extends go.LayeredDigraphLayout {
+      constructor() {
+        super();
+        this.alignOption = go.LayeredDigraphLayout.AlignAll;
+        this.initializeOption = go.LayeredDigraphLayout.InitDepthFirstIn;
+        this.spouseSpacing = 30;
+        this.isRouting = false;
+      }
+
+      makeNetwork(coll) {
+        const net = this.createNetwork();
+        if (coll instanceof go.Diagram) {
+          this.add(net, coll.nodes, true);
+          this.add(net, coll.links, true);
+        } else if (coll instanceof go.Group) {
+          this.add(net, coll.memberParts, false);
+        } else if (coll.iterator) {
+          this.add(net, coll.iterator, false);
+        }
+        return net;
+      }
+
+      add(net, coll, nonmemberonly) {
+        const horiz = this.direction == 0.0 || this.direction == 180.0;
+        const multiSpousePeople = new go.Set();
+        const it = coll.iterator;
+        while (it.next()) {
+          const node = it.value;
+          if (!(node instanceof go.Node) || !node.data) continue;
+          if (!node.isLayoutPositioned || !node.isVisible()) continue;
+          if (nonmemberonly && node.containingGroup !== null) continue;
+          if (node.isLinkLabel) {
+            const link = node.labeledLink;
+            if (link.category === "Marriage" || link.category === "Divorce") {
+              const spouseA = link.fromNode;
+              const spouseB = link.toNode;
+              const vertex = net.addNode(node);
+              if (horiz) {
+                vertex.height = spouseA.actualBounds.height + this.spouseSpacing + spouseB.actualBounds.height;
+                vertex.width = Math.max(spouseA.actualBounds.width, spouseB.actualBounds.width);
+                vertex.focus = new go.Point(vertex.width / 2, spouseA.actualBounds.height + this.spouseSpacing / 2);
+              } else {
+                vertex.width = spouseA.actualBounds.width + this.spouseSpacing + spouseB.actualBounds.width;
+                vertex.height = Math.max(spouseA.actualBounds.height, spouseB.actualBounds.height);
+                vertex.focus = new go.Point(spouseA.actualBounds.width + this.spouseSpacing / 2, vertex.height / 2);
+              }
+            }
+          } else {
+            let marriages = 0;
+            node.linksConnected.each(l => {
+              if (l.category === "Marriage" || l.category === "Divorce") marriages++;
+            });
+            if (marriages === 0) {
+              net.addNode(node);
+            } else if (marriages > 1) {
+              multiSpousePeople.add(node);
+            }
+          }
+        }
+        it.reset();
+        while (it.next()) {
+          const link = it.value;
+          if (!(link instanceof go.Link)) continue;
+          if (!link.isLayoutPositioned || !link.isVisible()) continue;
+          if (nonmemberonly && link.containingGroup !== null) continue;
+          if (link.category === "" && link.data) {
+            const parent = net.findVertex(link.fromNode);
+            const child = net.findVertex(link.toNode);
+            if (child !== null) {
+              net.linkVertexes(parent, child, link);
+            } else {
+              link.toNode.linksConnected.each(l => {
+                if (l.category !== "Marriage" && l.category !== "Divorce") return;
+                if (!l.data) return;
+                const mlab = l.labelNodes.first();
+                const mlabvert = net.findVertex(mlab);
+                if (mlabvert !== null) {
+                  net.linkVertexes(parent, mlabvert, link);
+                }
+              });
+            }
+          }
+        }
+
+        while (multiSpousePeople.count > 0) {
+          const node = multiSpousePeople.first();
+          const cohort = new go.Set();
+          this.extendCohort(cohort, node);
+          const dummyvert = net.createVertex();
+          net.addVertex(dummyvert);
+          const marriages = new go.Set();
+          cohort.each(n => {
+            n.linksConnected.each(l => {
+              marriages.add(l);
+            })
+          });
+          marriages.each(link => {
+            const mlab = link.labelNodes.first()
+            const v = net.findVertex(mlab);
+            if (v !== null) {
+              net.linkVertexes(dummyvert, v, null);
+            }
+          });
+          multiSpousePeople.removeAll(cohort);
+        }
+      }
+
+      extendCohort(coll, node) {
+        if (coll.has(node)) return;
+        coll.add(node);
+        node.linksConnected.each(l => {
+          if (l.category === "Marriage" || l.category === "Divorce") {
+            this.extendCohort(coll, l.fromNode);
+            this.extendCohort(coll, l.toNode);
+          }
+        });
+      }
+
+      assignLayers() {
+        super.assignLayers();
+        const horiz = this.direction == 0.0 || this.direction == 180.0;
+        const maxsizes = [];
+        this.network.vertexes.each(v => {
+          const lay = v.layer;
+          let max = maxsizes[lay];
+          if (max === undefined) max = 0;
+          const sz = (horiz ? v.width : v.height);
+          if (sz > max) maxsizes[lay] = sz;
+        });
+        this.network.vertexes.each(v => {
+          const lay = v.layer;
+          const max = maxsizes[lay];
+          if (horiz) {
+            v.focus = new go.Point(0, v.height / 2);
+            v.width = max;
+          } else {
+            v.focus = new go.Point(v.width / 2, 0);
+            v.height = max;
+          }
+        });
+      }
+
+      initializeIndices() {
+        super.initializeIndices();
+        const vertical = this.direction === 90 || this.direction === 270;
+        this.network.edges.each(e => {
+          if (e.fromVertex.node && e.fromVertex.node.isLinkLabel) {
+            e.portFromPos = vertical ? e.fromVertex.focusX : e.fromVertex.focusY;
+          }
+          if (e.toVertex.node && e.toVertex.node.isLinkLabel) {
+            e.portToPos = vertical ? e.toVertex.focusX : e.toVertex.focusY;
+          }
+        })
+      }
+
+      commitNodes() {
+        super.commitNodes();
+        this.network.vertexes.each(v => {
+          if (v.node !== null && !v.node.isLinkLabel) {
+            v.node.position = new go.Point(v.x, v.y);
+          }
+        });
+
+        const horiz = this.direction == 0.0 || this.direction == 180.0;
+        this.network.vertexes.each(v => {
+          if (v.node === null) return;
+          if (!v.node.isLinkLabel) return;
+          const labnode = v.node;
+          const lablink = labnode.labeledLink;
+          lablink.invalidateRoute();
+          let spouseA = lablink.fromNode;
+          let spouseB = lablink.toNode;
+          if (spouseA.opacity > 0 && spouseB.opacity > 0) {
+            if (spouseA.category === "F") {
+              const temp = spouseA;
+              spouseA = spouseB;
+              spouseB = temp;
+            }
+            const aParentsNode = this.findParentsMarriageLabelNode(spouseA);
+            const bParentsNode = this.findParentsMarriageLabelNode(spouseB);
+            if (aParentsNode !== null && bParentsNode !== null &&
+              (horiz
+                ? aParentsNode.position.x > bParentsNode.position.x
+                : aParentsNode.position.y > bParentsNode.position.y)) {
+              const temp = spouseA;
+              spouseA = spouseB;
+              spouseB = temp;
+            }
+            spouseA.moveTo(v.x, v.y);
+            if (horiz) {
+              spouseB.moveTo(v.x, v.y + spouseA.actualBounds.height + this.spouseSpacing);
+            } else {
+              spouseB.moveTo(v.x + spouseA.actualBounds.width + this.spouseSpacing, v.y);
+            }
+          } else if (spouseA.opacity === 0) {
+            const pos = horiz
+              ? new go.Point(v.x, v.centerY - spouseB.actualBounds.height / 2)
+              : new go.Point(v.centerX - spouseB.actualBounds.width / 2, v.y);
+            spouseB.move(pos);
+            if (horiz) pos.y++; else pos.x++;
+            spouseA.move(pos);
+          } else if (spouseB.opacity === 0) {
+            const pos = horiz
+              ? new go.Point(v.x, v.centerY - spouseA.actualBounds.height / 2)
+              : new go.Point(v.centerX - spouseA.actualBounds.width / 2, v.y);
+            spouseA.move(pos);
+            if (horiz) pos.y++; else pos.x++;
+            spouseB.move(pos);
+          }
+          lablink.ensureBounds();
+        });
+      }
+
+      findParentsMarriageLabelNode(node) {
+        const it = node.findNodesInto();
+        while (it.next()) {
+          const n = it.value;
+          if (n.isLinkLabel) return n;
+        }
+        return null;
+      }
+    }
+
+    // ========================================
+    // 다이어그램 초기화
+    // ========================================
+    function initDiagram() {
+      const $ = go.GraphObject.make;
+
+      myDiagram = new go.Diagram("myDiagramDiv", {
+        "animationManager.isEnabled": true,
+        initialAutoScale: go.Diagram.Uniform,
+        "undoManager.isEnabled": true,
+        maxSelectionCount: 1,
+        nodeSelectionAdornmentTemplate:
+          $(go.Adornment, "Auto",
+            { layerName: "Grid" },
+            $(go.Shape, "Circle", { fill: "#c1cee3", stroke: null }),
+            $(go.Placeholder, { margin: 2 })
+          ),
+        layout: $(GenogramLayout, { direction: 90, layerSpacing: 40, columnSpacing: 30 })
+      });
+
+      // 다이어그램 선택 변경 이벤트 리스너 추가
+      myDiagram.addDiagramListener("ChangedSelection", e => {
+        const node = myDiagram.selection.first();
+        if (node instanceof go.Node && node.data) {
+          // 다이어그램 노드 선택 시 입력 폼에 정보 반영
+          selectPerson(node.data.key);
+        } else {
+          // 선택 해제 시 폼 초기화
+          clearForm();
+        }
+      });
+
+      // 사망 표시용 슬래시 geometry
+      const slash = go.Geometry.parse("F M38 0 L40 0 40 2 2 40 0 40 0 38z");
+
+      // 남성 노드 템플릿
+      myDiagram.nodeTemplateMap.add("M",
+        $(go.Node, "Vertical",
+          { locationSpot: go.Spot.Center, locationObjectName: "ICON", selectionObjectName: "ICON" },
+          new go.Binding("opacity", "hide", h => h ? 0 : 1),
+          new go.Binding("pickable", "hide", h => !h),
+          $(go.Panel,
+            { name: "ICON" },
+            $(go.Shape, "Square",
+              { width: 40, height: 40, strokeWidth: 2, fill: "white", stroke: "#919191", portId: "" }),
+            // 속성 마커 패널
+            $(go.Panel,
+              {
+                itemTemplate:
+                  $(go.Panel,
+                    $(go.Shape,
+                      { stroke: null, strokeWidth: 0 },
+                      new go.Binding("fill", "", attrFill),
+                      new go.Binding("geometry", "", maleGeometry)
+                    )
+                  ),
+                margin: 1
+              },
+              new go.Binding("itemArray", "a")
+            ),
+            // 사망 표시
+            $(go.Shape,
+              { stroke: null, strokeWidth: 0, fill: "#d4071c" },
+              new go.Binding("geometry", "deceased", d => d ? slash : null),
+              new go.Binding("visible", "deceased", d => d === true)
+            )
+          ),
+          $(go.TextBlock,
+            { textAlign: "center", maxSize: new go.Size(80, NaN), background: "rgba(255,255,255,0.5)", margin: new go.Margin(4, 0, 0, 0) },
+            new go.Binding("text", "", d => d.age ? `${d.n} (${d.age}세)` : d.n))
+        ));
+
+      // 여성 노드 템플릿
+      myDiagram.nodeTemplateMap.add("F",
+        $(go.Node, "Vertical",
+          { locationSpot: go.Spot.Center, locationObjectName: "ICON", selectionObjectName: "ICON" },
+          new go.Binding("opacity", "hide", h => h ? 0 : 1),
+          new go.Binding("pickable", "hide", h => !h),
+          $(go.Panel,
+            { name: "ICON" },
+            $(go.Shape, "Circle",
+              { width: 40, height: 40, strokeWidth: 2, fill: "white", stroke: "#a1a1a1", portId: "" }),
+            // 속성 마커 패널
+            $(go.Panel,
+              {
+                itemTemplate:
+                  $(go.Panel,
+                    $(go.Shape,
+                      { stroke: null, strokeWidth: 0 },
+                      new go.Binding("fill", "", attrFill),
+                      new go.Binding("geometry", "", femaleGeometry)
+                    )
+                  ),
+                margin: 1
+              },
+              new go.Binding("itemArray", "a")
+            ),
+            // 사망 표시
+            $(go.Shape,
+              { stroke: null, strokeWidth: 0, fill: "#d4071c" },
+              new go.Binding("geometry", "deceased", d => d ? slash : null),
+              new go.Binding("visible", "deceased", d => d === true)
+            )
+          ),
+          $(go.TextBlock,
+            { textAlign: "center", maxSize: new go.Size(80, NaN), background: "rgba(255,255,255,0.5)", margin: new go.Margin(4, 0, 0, 0) },
+            new go.Binding("text", "", d => d.age ? `${d.n} (${d.age}세)` : d.n))
+        ));
+
+      // 링크 라벨 노드 템플릿
+      myDiagram.nodeTemplateMap.add("LinkLabel",
+        $(go.Node, { selectable: false, width: 1, height: 1, fromEndSegmentLength: 20 }));
+
+      // 부모-자식 링크 템플릿
+      myDiagram.linkTemplate =
+        $(go.Link,
+          { routing: go.Link.Orthogonal, corner: 10, curviness: 15, layerName: "Background", selectable: false },
+          $(go.Shape, { stroke: "gray", strokeWidth: 2 })
+        );
+
+      // 결혼 링크 템플릿
+      myDiagram.linkTemplateMap.add("Marriage",
+        $(go.Link,
+          {
+            routing: go.Link.AvoidsNodes, corner: 10,
+            fromSpot: go.Spot.LeftRightSides, toSpot: go.Spot.LeftRightSides,
+            selectable: false, isTreeLink: false, layerName: "Background"
+          },
+          $(go.Shape, { strokeWidth: 2.5, stroke: "blue" })
+        ));
+
+      // 이혼 링크 템플릿
+      myDiagram.linkTemplateMap.add("Divorce",
+        $(go.Link,
+          {
+            routing: go.Link.AvoidsNodes, corner: 10,
+            fromSpot: go.Spot.LeftRightSides, toSpot: go.Spot.LeftRightSides,
+            selectable: false, isTreeLink: false, layerName: "Background"
+          },
+          $(go.Shape, { strokeWidth: 2.5, stroke: "red", strokeDashArray: [10, 4] })
+        ));
+    }
+
+    // ========================================
+    // 다이어그램 업데이트
+    // ========================================
+    function updateDiagram() {
+      if (!myDiagram) return;
+
+      // familyData를 GoJS 모델 형식으로 변환
+      const nodeDataArray = familyData.map(p => ({
+        key: p.key,
+        n: p.name,
+        s: p.gender,
+        age: p.age,
+        deceased: p.deceased,
+        a: p.attributes || [],  // 속성 마커 배열
+        m: p.mother || undefined,
+        f: p.father || undefined,
+        ux: (p.gender === 'M' && p.spouse && p.relationStatus === 'married') ? p.spouse : undefined,
+        vir: (p.gender === 'F' && p.spouse && p.relationStatus === 'married') ? p.spouse : undefined,
+        exm: (p.gender === 'M' && p.spouse && p.relationStatus === 'divorced') ? p.spouse : undefined,
+        exf: (p.gender === 'F' && p.spouse && p.relationStatus === 'divorced') ? p.spouse : undefined
+      }));
+
+      myDiagram.model = new go.GraphLinksModel({
+        linkLabelKeysProperty: "labelKeys",
+        nodeCategoryProperty: "s",
+        copiesArrays: true,
+        nodeDataArray: nodeDataArray
+      });
+
+      setupMarriages(myDiagram);
+      setupDivorces(myDiagram);
+      setupParents(myDiagram);
+      setupDivorcedParents(myDiagram);
+    }
+
+    function findMarriage(diagram, a, b) {
+      const nodeA = diagram.findNodeForKey(a);
+      const nodeB = diagram.findNodeForKey(b);
+      if (nodeA !== null && nodeB !== null) {
+        const it = nodeA.findLinksBetween(nodeB);
+        while (it.next()) {
+          const link = it.value;
+          if (link.data !== null && link.data.category === "Marriage") return link;
+        }
+      }
+      return null;
+    }
+
+    function findDivorce(diagram, a, b) {
+      const nodeA = diagram.findNodeForKey(a);
+      const nodeB = diagram.findNodeForKey(b);
+      if (nodeA !== null && nodeB !== null) {
+        const it = nodeA.findLinksBetween(nodeB);
+        while (it.next()) {
+          const link = it.value;
+          if (link.data !== null && link.data.category === "Divorce") return link;
+        }
+      }
+      return null;
+    }
+
+    function setupMarriages(diagram) {
+      const model = diagram.model;
+      const nodeDataArray = model.nodeDataArray;
+      for (let i = 0; i < nodeDataArray.length; i++) {
+        const data = nodeDataArray[i];
+        const key = data.key;
+
+        let uxs = data.ux;
+        if (uxs !== undefined) {
+          if (typeof uxs === "number") uxs = [uxs];
+          for (let j = 0; j < uxs.length; j++) {
+            const wife = uxs[j];
+            const wdata = model.findNodeDataForKey(wife);
+            if (key === wife || !wdata || wdata.s !== "F") continue;
+            const link = findMarriage(diagram, key, wife);
+            if (link === null) {
+              const mlab = { s: "LinkLabel" };
+              model.addNodeData(mlab);
+              const mdata = { from: key, to: wife, labelKeys: [mlab.key], category: "Marriage" };
+              model.addLinkData(mdata);
+            }
+          }
+        }
+
+        let virs = data.vir;
+        if (virs !== undefined) {
+          if (typeof virs === "number") virs = [virs];
+          for (let j = 0; j < virs.length; j++) {
+            const husband = virs[j];
+            const hdata = model.findNodeDataForKey(husband);
+            if (key === husband || !hdata || hdata.s !== "M") continue;
+            const link = findMarriage(diagram, key, husband);
+            if (link === null) {
+              const mlab = { s: "LinkLabel" };
+              model.addNodeData(mlab);
+              const mdata = { from: key, to: husband, labelKeys: [mlab.key], category: "Marriage" };
+              model.addLinkData(mdata);
+            }
+          }
+        }
+      }
+    }
+
+    function setupDivorces(diagram) {
+      const model = diagram.model;
+      const nodeDataArray = model.nodeDataArray;
+      for (let i = 0; i < nodeDataArray.length; i++) {
+        const data = nodeDataArray[i];
+        const key = data.key;
+
+        let exm = data.exm;
+        if (exm !== undefined) {
+          if (typeof exm === "number") exm = [exm];
+          for (let j = 0; j < exm.length; j++) {
+            const wife = exm[j];
+            const wdata = model.findNodeDataForKey(wife);
+            if (key === wife || !wdata || wdata.s !== "F") continue;
+            const link = findDivorce(diagram, key, wife);
+            if (link === null) {
+              const mlab = { s: "LinkLabel" };
+              model.addNodeData(mlab);
+              const mdata = { from: key, to: wife, labelKeys: [mlab.key], category: "Divorce" };
+              model.addLinkData(mdata);
+            }
+          }
+        }
+
+        let exf = data.exf;
+        if (exf !== undefined) {
+          if (typeof exf === "number") exf = [exf];
+          for (let j = 0; j < exf.length; j++) {
+            const husband = exf[j];
+            const hdata = model.findNodeDataForKey(husband);
+            if (key === husband || !hdata || hdata.s !== "M") continue;
+            const link = findDivorce(diagram, key, husband);
+            if (link === null) {
+              const mlab = { s: "LinkLabel" };
+              model.addNodeData(mlab);
+              const mdata = { from: key, to: husband, labelKeys: [mlab.key], category: "Divorce" };
+              model.addLinkData(mdata);
+            }
+          }
+        }
+      }
+    }
+
+    function setupParents(diagram) {
+      const model = diagram.model;
+      const nodeDataArray = model.nodeDataArray;
+      for (let i = 0; i < nodeDataArray.length; i++) {
+        const data = nodeDataArray[i];
+        const key = data.key;
+        const mother = data.m;
+        const father = data.f;
+        if (mother !== undefined && father !== undefined) {
+          const link = findMarriage(diagram, mother, father);
+          if (link === null) continue;
+          const mdata = link.data;
+          if (mdata.labelKeys === undefined || mdata.labelKeys[0] === undefined) continue;
+          const mlabkey = mdata.labelKeys[0];
+          const cdata = { from: mlabkey, to: key };
+          myDiagram.model.addLinkData(cdata);
+        }
+      }
+    }
+
+    function setupDivorcedParents(diagram) {
+      const model = diagram.model;
+      const nodeDataArray = model.nodeDataArray;
+      for (let i = 0; i < nodeDataArray.length; i++) {
+        const data = nodeDataArray[i];
+        const key = data.key;
+        const mother = data.m;
+        const father = data.f;
+        if (mother !== undefined && father !== undefined) {
+          const link = findDivorce(diagram, mother, father);
+          if (link === null) continue;
+          const mdata = link.data;
+          if (mdata.labelKeys === undefined || mdata.labelKeys[0] === undefined) continue;
+          const mlabkey = mdata.labelKeys[0];
+          const cdata = { from: mlabkey, to: key };
+          myDiagram.model.addLinkData(cdata);
+        }
+      }
+    }
+
+    // ========================================
+    // UI 업데이트
+    // ========================================
+    function updateFamilyList() {
+      const listEl = document.getElementById('familyList');
+      listEl.innerHTML = '';
+
+      familyData.forEach(person => {
+        const item = document.createElement('div');
+        item.className = 'family-item' + (selectedPersonKey === person.key ? ' selected' : '');
+        item.onclick = () => selectPerson(person.key);
+
+        const genderClass = person.gender === 'M' ? 'gender-male' : 'gender-female';
+        const genderLabel = person.gender === 'M' ? '♂' : '♀';
+
+        let statusHtml = '';
+        if (person.deceased) {
+          statusHtml += '<span class="status-badge">사망</span>';
+        }
+
+        item.innerHTML = `
+          <div class="family-item-info">
+            <div class="gender-icon ${genderClass}">${genderLabel}</div>
+            <div>
+              <div class="family-item-name">${person.name}</div>
+              <div class="family-item-age">${person.age ? person.age + '세' : ''}</div>
+            </div>
+          </div>
+          <div class="family-item-status">${statusHtml}</div>
+          <button class="family-item-delete" onclick="event.stopPropagation(); deletePerson(${person.key})">×</button>
+        `;
+
+        listEl.appendChild(item);
+      });
+
+      updateDropdowns();
+    }
+
+    function updateDropdowns() {
+      const fatherSelect = document.getElementById('personFather');
+      const motherSelect = document.getElementById('personMother');
+      const spouseSelect = document.getElementById('personSpouse');
+      const siblingSelect = document.getElementById('personSibling');
+
+      const currentGender = document.getElementById('personGender').value;
+
+      // 부모 선택 드롭다운 업데이트
+      const males = familyData.filter(p => p.gender === 'M' && p.key !== selectedPersonKey);
+      const females = familyData.filter(p => p.gender === 'F' && p.key !== selectedPersonKey);
+
+      fatherSelect.innerHTML = '<option value="">선택 안 함</option>';
+      males.forEach(p => {
+        fatherSelect.innerHTML += `<option value="${p.key}">${p.name}</option>`;
+      });
+
+      motherSelect.innerHTML = '<option value="">선택 안 함</option>';
+      females.forEach(p => {
+        motherSelect.innerHTML += `<option value="${p.key}">${p.name}</option>`;
+      });
+
+      // 배우자 선택 드롭다운 (반대 성별만)
+      const potentialSpouses = currentGender === 'M' ? females : males;
+      spouseSelect.innerHTML = '<option value="">선택 안 함</option>';
+      potentialSpouses.forEach(p => {
+        spouseSelect.innerHTML += `<option value="${p.key}">${p.name}</option>`;
+      });
+
+      // 형제 선택 드롭다운 (부모가 있는 사람들만)
+      const potentialSiblings = familyData.filter(p =>
+        p.key !== selectedPersonKey && (p.father || p.mother)
+      );
+      siblingSelect.innerHTML = '<option value="">선택 안 함</option>';
+      potentialSiblings.forEach(p => {
+        siblingSelect.innerHTML += `<option value="${p.key}">${p.name}</option>`;
+      });
+
+      // 선택된 사람이 있으면 값 복원
+      if (selectedPersonKey !== null) {
+        const person = familyData.find(p => p.key === selectedPersonKey);
+        if (person) {
+          fatherSelect.value = person.father || '';
+          motherSelect.value = person.mother || '';
+          spouseSelect.value = person.spouse || '';
+          document.getElementById('relationStatus').value = person.relationStatus || 'married';
+        }
+      }
+    }
+
+    // 형제 선택 시 부모 정보 자동 복사
+    function onSiblingSelect() {
+      const siblingKey = parseInt(document.getElementById('personSibling').value);
+      if (!siblingKey) return;
+
+      const sibling = familyData.find(p => p.key === siblingKey);
+      if (sibling) {
+        if (sibling.father) {
+          document.getElementById('personFather').value = sibling.father;
+        }
+        if (sibling.mother) {
+          document.getElementById('personMother').value = sibling.mother;
+        }
+        showToast(`${sibling.name}님의 부모 정보를 복사했습니다.`);
+      }
+    }
+
+    function selectPerson(key) {
+      selectedPersonKey = key;
+      const person = familyData.find(p => p.key === key);
+      if (person) {
+        document.getElementById('personName').value = person.name;
+        document.getElementById('personAge').value = person.age || '';
+        document.getElementById('personGender').value = person.gender;
+        document.getElementById('personDeceased').checked = person.deceased || false;
+        document.getElementById('personFather').value = person.father || '';
+        document.getElementById('personMother').value = person.mother || '';
+        document.getElementById('personSpouse').value = person.spouse || '';
+        document.getElementById('relationStatus').value = person.relationStatus || 'married';
+
+        // 속성 마커 복원
+        const attrs = person.attributes || [];
+        document.getElementById('attrTL').value = attrs.find(a => ['A', 'B', 'C'].includes(a)) || '';
+        document.getElementById('attrTR').value = attrs.find(a => ['D', 'E', 'F'].includes(a)) || '';
+        document.getElementById('attrBL').value = attrs.find(a => ['J', 'K', 'L'].includes(a)) || '';
+        document.getElementById('attrBR').value = attrs.find(a => ['G', 'H', 'I'].includes(a)) || '';
+      }
+      updateFamilyList();
+    }
+
+    function clearForm() {
+      selectedPersonKey = null;
+      document.getElementById('personName').value = '';
+      document.getElementById('personAge').value = '';
+      document.getElementById('personGender').value = 'M';
+      document.getElementById('personDeceased').checked = false;
+      document.getElementById('personFather').value = '';
+      document.getElementById('personMother').value = '';
+      document.getElementById('personSpouse').value = '';
+      document.getElementById('personSibling').value = '';
+      document.getElementById('relationStatus').value = 'married';
+      // 속성 마커 초기화
+      document.getElementById('attrTL').value = '';
+      document.getElementById('attrTR').value = '';
+      document.getElementById('attrBL').value = '';
+      document.getElementById('attrBR').value = '';
+      updateFamilyList();
+    }
+
+    // 속성 마커 값 수집 함수
+    function getSelectedAttributes() {
+      const attrs = [];
+      const tl = document.getElementById('attrTL').value;
+      const tr = document.getElementById('attrTR').value;
+      const bl = document.getElementById('attrBL').value;
+      const br = document.getElementById('attrBR').value;
+      if (tl) attrs.push(tl);
+      if (tr) attrs.push(tr);
+      if (bl) attrs.push(bl);
+      if (br) attrs.push(br);
+      return attrs;
+    }
+
+    // ========================================
+    // 가족 구성원 관리
+    // ========================================
+    function addPerson() {
+      const name = document.getElementById('personName').value.trim();
+      if (!name) {
+        showToast('이름을 입력해주세요.', true);
+        return;
+      }
+
+      const person = {
+        key: nextKey++,
+        name: name,
+        age: parseInt(document.getElementById('personAge').value) || null,
+        gender: document.getElementById('personGender').value,
+        deceased: document.getElementById('personDeceased').checked,
+        father: parseInt(document.getElementById('personFather').value) || null,
+        mother: parseInt(document.getElementById('personMother').value) || null,
+        spouse: parseInt(document.getElementById('personSpouse').value) || null,
+        relationStatus: document.getElementById('relationStatus').value,
+        attributes: getSelectedAttributes()
+      };
+
+      // 배우자 관계 동기화
+      if (person.spouse) {
+        const spouseData = familyData.find(p => p.key === person.spouse);
+        if (spouseData) {
+          spouseData.spouse = person.key;
+          spouseData.relationStatus = person.relationStatus;
+        }
+      }
+
+      familyData.push(person);
+      saveToStorage();  // localStorage에 저장
+      updateFamilyList();
+      updateDiagram();
+      clearForm();
+      showToast(`${name}님이 추가되었습니다.`);
+    }
+
+    function updatePerson() {
+      if (selectedPersonKey === null) {
+        showToast('수정할 가족 구성원을 선택해주세요.', true);
+        return;
+      }
+
+      const name = document.getElementById('personName').value.trim();
+      if (!name) {
+        showToast('이름을 입력해주세요.', true);
+        return;
+      }
+
+      const person = familyData.find(p => p.key === selectedPersonKey);
+      if (person) {
+        // 기존 배우자 관계 해제
+        if (person.spouse) {
+          const oldSpouse = familyData.find(p => p.key === person.spouse);
+          if (oldSpouse && oldSpouse.spouse === person.key) {
+            oldSpouse.spouse = null;
+            oldSpouse.relationStatus = 'married';
+          }
+        }
+
+        person.name = name;
+        person.age = parseInt(document.getElementById('personAge').value) || null;
+        person.gender = document.getElementById('personGender').value;
+        person.deceased = document.getElementById('personDeceased').checked;
+        person.father = parseInt(document.getElementById('personFather').value) || null;
+        person.mother = parseInt(document.getElementById('personMother').value) || null;
+        person.spouse = parseInt(document.getElementById('personSpouse').value) || null;
+        person.relationStatus = document.getElementById('relationStatus').value;
+        person.attributes = getSelectedAttributes();  // 속성 마커 업데이트
+
+        // 새 배우자 관계 설정
+        if (person.spouse) {
+          const newSpouse = familyData.find(p => p.key === person.spouse);
+          if (newSpouse) {
+            newSpouse.spouse = person.key;
+            newSpouse.relationStatus = person.relationStatus;
+          }
+        }
+
+        saveToStorage();  // localStorage에 저장
+        updateFamilyList();
+        updateDiagram();
+        showToast(`${name}님 정보가 수정되었습니다.`);
+      }
+    }
+
+    function deletePerson(key) {
+      const person = familyData.find(p => p.key === key);
+      if (!person) return;
+
+      // 이 사람을 부모로 가진 자녀들의 부모 정보 제거
+      familyData.forEach(p => {
+        if (p.father === key) p.father = null;
+        if (p.mother === key) p.mother = null;
+        if (p.spouse === key) {
+          p.spouse = null;
+          p.relationStatus = 'married';
+        }
+      });
+
+      familyData = familyData.filter(p => p.key !== key);
+
+      if (selectedPersonKey === key) {
+        clearForm();
+      }
+
+      saveToStorage();  // localStorage에 저장
+      updateFamilyList();
+      updateDiagram();
+      showToast(`${person.name}님이 삭제되었습니다.`);
+    }
+
+    // ========================================
+    // 데이터 저장/불러오기
+    // ========================================
+    function exportImage() {
+      if (!myDiagram) return;
+
+      const blob = myDiagram.makeImageData({
+        background: "white",
+        returnType: "blob",
+        callback: function (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '가계도_' + new Date().toISOString().slice(0, 10) + '.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('가계도가 이미지로 저장되었습니다.');
+        }
+      });
+    }
+
+    function saveProjectData() {
+      if (!familyData || familyData.length === 0) {
+        showToast('저장할 가계도 데이터가 없습니다.', true);
+        return;
+      }
+
+      try {
+        const data = {
+          version: '1.0',
+          nextKey: nextKey,
+          familyData: familyData
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '가계도_프로젝트_' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a); // 호환성을 위해 body에 추가
+        a.click();
+        document.body.removeChild(a); // 클릭 후 제거
+        URL.revokeObjectURL(url);
+        showToast('프로젝트가 저장되었습니다.');
+      } catch (err) {
+        console.error('Export error:', err);
+        showToast('저장 중 오류가 발생했습니다.', true);
+      }
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.familyData) {
+            familyData = data.familyData;
+            nextKey = data.nextKey || Math.max(...familyData.map(p => p.key)) + 1;
+            saveToStorage();  // localStorage에 저장
+            updateFamilyList();
+            updateDiagram();
+            clearForm();
+            showToast('가계도를 불러왔습니다.');
+          }
+        } catch (err) {
+          showToast('파일을 읽는 중 오류가 발생했습니다.', true);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetAll() {
+      if (confirm('모든 가계도 데이터를 초기화하시겠습니까?')) {
+        familyData = [];
+        nextKey = 1;
+        selectedPersonKey = null;
+        localStorage.removeItem(STORAGE_KEY);  // localStorage 삭제
+        clearForm();
+        updateFamilyList();
+        updateDiagram();
+        showToast('가계도가 초기화되었습니다.');
+      }
+    }
+
+    // 가계도 레이아웃 다시 정렬
+    function relayoutDiagram() {
+      if (myDiagram) {
+        myDiagram.layoutDiagram(true);
+        showToast('가계도가 정렬되었습니다.');
+      }
+    }
+
+    // ========================================
+    // 유틸리티
+    // ========================================
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+
+    // ========================================
+    // 이벤트 리스너
+    // ========================================
+    document.addEventListener('DOMContentLoaded', () => {
+      initDiagram();
+
+      // localStorage에서 데이터 로드
+      if (loadFromStorage()) {
+        updateDiagram();
+      }
+      updateFamilyList();
+
+      document.getElementById('addPersonBtn').addEventListener('click', addPerson);
+      document.getElementById('updatePersonBtn').addEventListener('click', updatePerson);
+      document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+
+      document.getElementById('exportBtn').addEventListener('click', exportImage);
+      document.getElementById('saveProjectBtn').addEventListener('click', saveProjectData);
+      document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFile').click();
+      });
+      document.getElementById('importFile').addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+          importData(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+      document.getElementById('resetBtn').addEventListener('click', resetAll);
+      document.getElementById('layoutBtn').addEventListener('click', relayoutDiagram);
+
+      // 성별 변경 시 배우자 드롭다운 업데이트
+      document.getElementById('personGender').addEventListener('change', updateDropdowns);
+
+      // 형제 선택 시 부모 정보 자동 복사
+      document.getElementById('personSibling').addEventListener('change', onSiblingSelect);
+    });
+  </script>
+</body>
+
+</html>

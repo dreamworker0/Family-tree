@@ -1,0 +1,140 @@
+/* 공통 노드 스타일 */
+.person-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    width: 80px;
+    /* 레이아웃 계산과 일치시키기 위해 고정 너비 설정 */
+}
+
+.person-node.selected .node-icon {
+    box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.5);
+}
+
+.node-icon {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 2px solid #919191;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* 남성 노드 - 사각형 */
+.male-icon {
+    border-radius: 0;
+}
+
+/* 여성 노드 - 원형 */
+.female-icon {
+    border-radius: 50%;
+    border-color: #a1a1a1;
+}
+
+/* 노드 라벨 */
+.node-label {
+    margin-top: 4px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #333;
+}
+
+/* 사망 표시 슬래시 */
+.deceased-slash {
+    position: absolute;
+    width: 56px;
+    height: 2px;
+    background: #d4071c;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    z-index: 10;
+}
+
+/* 남성 4분면 속성 마커 */
+.attr-quadrant {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+}
+
+.attr-quadrant.tl {
+    top: 0;
+    left: 0;
+}
+
+.attr-quadrant.tr {
+    top: 0;
+    right: 0;
+}
+
+.attr-quadrant.bl {
+    bottom: 0;
+    left: 0;
+}
+
+.attr-quadrant.br {
+    bottom: 0;
+    right: 0;
+}
+
+/* 여성 4분면 속성 마커 (파이 형태) */
+.attr-pie {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    transform-origin: 100% 100%;
+}
+
+.attr-pie.tl {
+    top: 0;
+    left: 0;
+    border-radius: 100% 0 0 0;
+    transform-origin: bottom right;
+}
+
+.attr-pie.tr {
+    top: 0;
+    right: 0;
+    border-radius: 0 100% 0 0;
+    transform-origin: bottom left;
+}
+
+.attr-pie.bl {
+    bottom: 0;
+    left: 0;
+    border-radius: 0 0 0 100%;
+    transform-origin: top right;
+}
+
+.attr-pie.br {
+    bottom: 0;
+    right: 0;
+    border-radius: 0 0 100% 0;
+    transform-origin: top left;
+}
+
+/* React Flow 핸들 스타일 */
+.react-flow__handle {
+    width: 8px;
+    height: 8px;
+    background: #555;
+    border: none;
+    opacity: 0;
+}
+
+.person-node:hover .react-flow__handle {
+    opacity: 0.5;
+}

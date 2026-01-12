@@ -1,0 +1,66 @@
+.legend {
+    display: flex;
+    gap: 20px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.legend-shape {
+    width: 20px;
+    height: 20px;
+}
+
+.legend-male {
+    background: #fff;
+    border: 2px solid #919191;
+}
+
+.legend-female {
+    background: #fff;
+    border: 2px solid #a1a1a1;
+    border-radius: 50%;
+}
+
+.legend-line {
+    width: 30px;
+    height: 3px;
+}
+
+.legend-marriage {
+    background: blue;
+}
+
+.legend-divorce {
+    background: repeating-linear-gradient(90deg,
+            red 0px,
+            red 6px,
+            transparent 6px,
+            transparent 10px);
+}
+
+.legend-death {
+    position: relative;
+    background: #fff;
+    border: 2px solid #919191;
+}
+
+.legend-death::after {
+    content: '';
+    position: absolute;
+    width: 28px;
+    height: 2px;
+    background: #d4071c;
+    top: 50%;
+    left: -4px;
+    transform: rotate(-45deg);
+}
