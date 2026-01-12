@@ -1,16 +1,15 @@
-import { useNodes, useEdges, useReactFlow, getNodesBounds, useStore, type ReactFlowState } from '@xyflow/react';
+import { useNodes, useEdges, getNodesBounds, useStore, type ReactFlowState } from '@xyflow/react';
 import { useMemo } from 'react';
 
 const selector = (s: ReactFlowState) => ({
     width: s.width,
     height: s.height,
     transform: s.transform,
-    nodeLookup: s.nodeLookup,
 });
 
 export default function CustomMiniMap() {
-    // nodeLookup, edges from store
-    const { width, height, transform, nodeLookup } = useStore(selector);
+    // edges from store
+    const { width, height, transform } = useStore(selector);
     const nodes = useNodes();
     const edges = useEdges(); // Hook for reactivity
     const [x, y, zoom] = transform;

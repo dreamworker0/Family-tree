@@ -204,7 +204,8 @@
 
 /* 가족 목록 */
 .family-list {
-  max-height: 200px;
+  min-height: 150px;
+  max-height: 300px;
   overflow-y: auto;
 }
 

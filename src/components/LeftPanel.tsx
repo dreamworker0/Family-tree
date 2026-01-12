@@ -412,7 +412,7 @@ export default function LeftPanel() {
                 </div>
 
                 {/* 가족 목록 */}
-                <div className="section" style={{ marginTop: '20px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <div className="section" style={{ marginTop: '20px' }}>
                     <div className="section-title">가족 구성원 목록</div>
 
                     {/* 검색창 */}
@@ -434,7 +434,7 @@ export default function LeftPanel() {
                         />
                     </div>
 
-                    <div className="family-list" style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+                    <div className="family-list">
                         {filteredFamilyData.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '20px', color: '#666', fontSize: '13px' }}>
                                 {searchTerm ? '검색 결과가 없습니다.' : '가족 구성원이 없습니다.'}
