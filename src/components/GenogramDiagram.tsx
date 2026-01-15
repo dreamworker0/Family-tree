@@ -4,12 +4,12 @@ import {
     ReactFlow,
     Background,
     Controls,
+    ControlButton,
     useNodesState,
     useEdgesState,
     ConnectionMode,
     Node,
     useReactFlow,
-    getNodesBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -59,11 +59,12 @@ export default function GenogramDiagram() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const diagramRef = useRef<HTMLDivElement>(null);
-    const { screenToFlowPosition, getViewport } = useReactFlow();
+    const { screenToFlowPosition, getViewport, zoomIn, zoomOut, fitView, getNodesBounds } = useReactFlow();
 
     // 컨텍스트 메뉴 상태
     const [contextMenu, setContextMenu] = useState<{ id: string; top: number; left: number } | null>(null);
     const [paneContextMenu, setPaneContextMenu] = useState<{ x: number; y: number; top: number; left: number } | null>(null);
+    const [isInteractive, setIsInteractive] = useState(true);
 
     // 레이아웃 계산
     const layout = useMemo(() => {
@@ -229,7 +230,7 @@ export default function GenogramDiagram() {
                 console.error('이미지 저장 실패:', err);
                 alert('이미지 저장 중 오류가 발생했습니다.');
             });
-    }, [diagramRef, nodes]);
+    }, [diagramRef, nodes, getNodesBounds]);
 
     // 레이아웃 재정렬
     const handleRelayout = useCallback(() => {
@@ -376,9 +377,46 @@ export default function GenogramDiagram() {
                     fitViewOptions={{ padding: 0.2 }}
                     minZoom={0.1}
                     maxZoom={2}
+                    nodesDraggable={isInteractive}
+                    nodesConnectable={isInteractive}
+                    elementsSelectable={isInteractive}
+                    panOnDrag={isInteractive ? true : [1, 2]} // 락 상태에서도 마우스 휠이나 버튼으로 이동은 가능하게 할 수도 있지만, panOnDrag false면 아예 드래그 안됨. [1,2]는 우클릭/휠클릭 드래그 허용 의미.
                 >
                     <Background color="#ddd" gap={20} />
-                    <Controls />
+                    <Controls
+                        showZoom={false}
+                        showFitView={false}
+                        showInteractive={false}
+                    >
+                        <ControlButton
+                            onClick={() => zoomIn()}
+                            title="확대"
+                        >
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </ControlButton>
+                        <ControlButton
+                            onClick={() => zoomOut()}
+                            title="축소"
+                        >
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </ControlButton>
+                        <ControlButton
+                            onClick={() => fitView({ padding: 0.2 })}
+                            title="전체 보기"
+                        >
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 15v6h-6M3 9V3h6"></path></svg>
+                        </ControlButton>
+                        <ControlButton
+                            onClick={() => setIsInteractive(!isInteractive)}
+                            title={isInteractive ? "이동/편집 잠금" : "이동/편집 허용"}
+                        >
+                            {isInteractive ? (
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            ) : (
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                            )}
+                        </ControlButton>
+                    </Controls>
                     <CustomMiniMap />
                 </ReactFlow>
             </div>

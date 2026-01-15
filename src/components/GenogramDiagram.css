@@ -81,15 +81,32 @@
     ry: 50%;
 }
 
-/* Controls 아이콘 진하게 */
+/* Controls 아이콘 진하게 및 상태 구분 개선 */
+.react-flow__controls-button {
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
 .react-flow__controls-button svg {
-    fill: #333;
-    stroke: #333;
-    opacity: 0.8;
+    fill: #000;
+    stroke: #000;
+    opacity: 0.9;
+    transition: all 0.2s ease;
 }
 
 .react-flow__controls-button:hover svg {
     opacity: 1;
+    transform: scale(1.1);
+}
+
+.react-flow__controls-button:disabled {
+    background: #f5f5f5 !important;
+    cursor: not-allowed;
+}
+
+.react-flow__controls-button:disabled svg {
+    fill: #bbb !important;
+    stroke: #bbb !important;
+    opacity: 0.4;
 }
 
 /* React Flow 워터마크 숨기기 */

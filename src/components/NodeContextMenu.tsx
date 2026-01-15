@@ -214,6 +214,12 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSave();
+        }
+    };
+
     const handleSave = () => {
         updatePerson(personKey, formData);
         onClose();
@@ -376,6 +382,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                 maxLength={10}
                                 value={formData.name || ''}
                                 onChange={(e) => handleChange('name', e.target.value)}
+                                onKeyDown={handleKeyDown}
                                 style={{
                                     width: '100%',
                                     padding: '6px',
@@ -392,8 +399,10 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                 <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>나이</label>
                                 <input
                                     type="number"
-                                    value={formData.age || ''}
-                                    onChange={(e) => handleChange('age', parseInt(e.target.value) || 0)}
+                                    value={formData.age !== undefined && formData.age !== null ? formData.age : ''}
+                                    min="0"
+                                    onChange={(e) => handleChange('age', Math.max(0, parseInt(e.target.value) || 0))}
+                                    onKeyDown={handleKeyDown}
                                     style={{
                                         width: '100%',
                                         padding: '6px',
@@ -409,6 +418,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                 <select
                                     value={formData.gender || 'M'}
                                     onChange={(e) => handleChange('gender', e.target.value as Gender)}
+                                    onKeyDown={handleKeyDown}
                                     style={{
                                         width: '100%',
                                         padding: '6px',
@@ -430,6 +440,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                     type="checkbox"
                                     checked={formData.deceased || false}
                                     onChange={(e) => handleChange('deceased', e.target.checked)}
+                                    onKeyDown={handleKeyDown}
                                 />
                                 사망
                             </label>
@@ -443,6 +454,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                     <select
                                         value={quadrants.tl}
                                         onChange={(e) => handleQuadrantChange('tl', e.target.value)}
+                                        onKeyDown={handleKeyDown}
                                         style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
                                     >
                                         {attributeOptions.topLeft.map(opt => (
@@ -455,6 +467,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                     <select
                                         value={quadrants.tr}
                                         onChange={(e) => handleQuadrantChange('tr', e.target.value)}
+                                        onKeyDown={handleKeyDown}
                                         style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
                                     >
                                         {attributeOptions.topRight.map(opt => (
@@ -467,6 +480,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                     <select
                                         value={quadrants.bl}
                                         onChange={(e) => handleQuadrantChange('bl', e.target.value)}
+                                        onKeyDown={handleKeyDown}
                                         style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
                                     >
                                         {attributeOptions.bottomLeft.map(opt => (
@@ -479,6 +493,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                                     <select
                                         value={quadrants.br}
                                         onChange={(e) => handleQuadrantChange('br', e.target.value)}
+                                        onKeyDown={handleKeyDown}
                                         style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
                                     >
                                         {attributeOptions.bottomRight.map(opt => (

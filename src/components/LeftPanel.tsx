@@ -230,7 +230,10 @@ export default function LeftPanel() {
                                 min="0"
                                 max="150"
                                 value={form.age}
-                                onChange={(e) => setForm({ ...form, age: e.target.value })}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    setForm({ ...form, age: (isNaN(val) ? '' : Math.max(0, val)).toString() });
+                                }}
                             />
                         </div>
                     </div>
@@ -463,7 +466,7 @@ export default function LeftPanel() {
                                         </div>
                                         <div>
                                             <div className="family-item-name">{person.name}</div>
-                                            <div className="family-item-age">{person.age ? `${person.age}세` : ''}</div>
+                                            <div className="family-item-age">{(person.age !== null && person.age !== undefined) ? `${person.age}세` : ''}</div>
                                         </div>
                                     </div>
                                     <div className="family-item-status">
