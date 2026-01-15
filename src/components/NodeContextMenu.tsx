@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useGenogramStore } from '../store/useGenogramStore';
 import { Person, Gender, RelationStatus } from '../types/types';
 import { attributeOptions } from '../utils/attributeColors';
@@ -49,9 +49,34 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
         }
     }, [person]);
 
-    useEffect(() => {
-        setPos({ top, left });
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        // 초기 위치 설정 (일단 props로 온 값 넣고, 바로 아래에서 보정)
+        let newTop = top;
+        let newLeft = left;
+
+        if (menuRef.current) {
+            const { offsetWidth, offsetHeight } = menuRef.current;
+            const { innerWidth, innerHeight } = window;
+
+            // 오른쪽 벗어남 방지
+            if (newLeft + offsetWidth > innerWidth) {
+                newLeft = innerWidth - offsetWidth - 20; // 20px 여유
+            }
+            // 아래쪽 벗어남 방지
+            if (newTop + offsetHeight > innerHeight) {
+                newTop = innerHeight - offsetHeight - 20;
+            }
+
+            // 왼쪽/위쪽도 음수가 되지 않게 방지
+            newLeft = Math.max(10, newLeft);
+            newTop = Math.max(10, newTop);
+        }
+
+        setPos({ top: newTop, left: newLeft });
     }, [top, left]);
+
 
     const handleQuadrantChange = (posKey: 'tl' | 'tr' | 'bl' | 'br', val: string) => {
         setQuadrants(prev => {
@@ -177,6 +202,14 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
         onClose();
     };
 
+    const nameInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!isMultiSelect && nameInputRef.current) {
+            requestAnimationFrame(() => nameInputRef.current?.focus());
+        }
+    }, [isMultiSelect, personKey]);
+
     const handleChange = (field: keyof Person, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
@@ -195,6 +228,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
 
     return (
         <div
+            ref={menuRef}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -214,7 +248,7 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                 userSelect: dragging ? 'none' : 'auto'
             }}>
             {/* 드래그용 헤더 */}
-            <div
+            < div
                 onMouseDown={handleMouseDown}
                 style={{
                     position: 'absolute',
@@ -228,273 +262,278 @@ export default function NodeContextMenu({ id, top, left, onClose }: NodeContextM
                 }}
             />
 
-            {isMultiSelect && (
-                <div style={{ marginBottom: '16px', paddingBottom: '12px' }}>
-                    <h3 style={{ margin: '0 0 4px 0', color: '#ffcc00', fontSize: '14px' }}>
-                        다중 선택 관계 설정 ({selectedPersonKeys.length}명 선택됨)
-                    </h3>
-                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #444' }}>
-                        {person.name} 님 → {targetLabel}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                        {others.includes(person.spouse || -1) && (
-                            <div style={{ fontSize: '11px', color: '#ff4757', marginBottom: '4px' }}>
-                                ⚠️ 배우자가 포함되어 있어 부모로 설정할 수 없습니다.
-                            </div>
-                        )}
-                        <button
-                            onClick={() => handleSetRelationship('father')}
-                            disabled={others.includes(person.spouse || -1)}
-                            style={{
-                                padding: '6px',
-                                background: others.includes(person.spouse || -1) ? '#222' : '#333',
-                                color: others.includes(person.spouse || -1) ? '#666' : '#fff',
-                                border: '1px solid #555',
-                                borderRadius: '4px',
-                                cursor: others.includes(person.spouse || -1) ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            [아버지]로 설정
-                        </button>
-                        <button
-                            onClick={() => handleSetRelationship('mother')}
-                            disabled={others.includes(person.spouse || -1)}
-                            style={{
-                                padding: '6px',
-                                background: others.includes(person.spouse || -1) ? '#222' : '#333',
-                                color: others.includes(person.spouse || -1) ? '#666' : '#fff',
-                                border: '1px solid #555',
-                                borderRadius: '4px',
-                                cursor: others.includes(person.spouse || -1) ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            [어머니]로 설정
-                        </button>
-                        <button
-                            onClick={handleSetSiblings}
-                            style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                            [형제/자매]로 설정
-                        </button>
-                        {selectedPersonKeys.length === 2 && (
-                            <>
-                                <button
-                                    onClick={() => handleSetRelationship('spouse', 'married')}
-                                    style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
-                                >
-                                    [결혼]으로 설정
-                                </button>
-                                <button
-                                    onClick={() => handleSetRelationship('spouse', 'divorced')}
-                                    style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
-                                >
-                                    [이혼]으로 설정
-                                </button>
-                            </>
-                        )}
-                        {selectedPersonKeys.length >= 3 && (() => {
-                            const selectedPersons = selectedPersonKeys.map(k => familyData.find(p => p.key === k)).filter(p => !!p) as Person[];
-                            const husband = selectedPersons.find(p => p.gender === 'M' && p.spouse && selectedPersonKeys.includes(p.spouse));
-                            const wife = husband ? selectedPersons.find(p => p.key === husband.spouse) : null;
-                            if (husband && wife) {
-                                return (
-                                    <button
-                                        onClick={handleSetAsChildren}
-                                        style={{ padding: '6px', background: '#22a6b3', color: '#fff', border: '1px solid #1dd1a1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                                    >
-                                        [{husband.name}·{wife.name}]의 [자녀]로 설정
-                                    </button>
-                                );
-                            }
-                            return null;
-                        })()}
-                        <button
-                            onClick={onClose}
-                            style={{
-                                marginTop: '4px',
-                                padding: '6px',
-                                background: 'transparent',
-                                color: '#ccc',
-                                border: '1px solid #555',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            닫기
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {!isMultiSelect && (
-                <>
-                    <h3 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #555', paddingBottom: '8px', color: '#00d9ff' }}>
-                        노드 속성 편집
-                    </h3>
-
-                    <div style={{ marginBottom: '10px' }}>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>이름</label>
-                        <input
-                            maxLength={10}
-                            value={formData.name || ''}
-                            onChange={(e) => handleChange('name', e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '6px',
-                                borderRadius: '4px',
-                                border: '1px solid #555',
-                                background: '#333',
-                                color: 'white'
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>나이</label>
-                            <input
-                                type="number"
-                                value={formData.age || ''}
-                                onChange={(e) => handleChange('age', parseInt(e.target.value) || 0)}
-                                style={{
-                                    width: '100%',
-                                    padding: '6px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #555',
-                                    background: '#333',
-                                    color: 'white'
-                                }}
-                            />
+            {
+                isMultiSelect && (
+                    <div style={{ marginBottom: '16px', paddingBottom: '12px' }}>
+                        <h3 style={{ margin: '0 0 4px 0', color: '#ffcc00', fontSize: '14px' }}>
+                            다중 선택 관계 설정 ({selectedPersonKeys.length}명 선택됨)
+                        </h3>
+                        <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #444' }}>
+                            {person.name} 님 → {targetLabel}
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>성별</label>
-                            <select
-                                value={formData.gender || 'M'}
-                                onChange={(e) => handleChange('gender', e.target.value as Gender)}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                            {others.includes(person.spouse || -1) && (
+                                <div style={{ fontSize: '11px', color: '#ff4757', marginBottom: '4px' }}>
+                                    ⚠️ 배우자가 포함되어 있어 부모로 설정할 수 없습니다.
+                                </div>
+                            )}
+                            <button
+                                onClick={() => handleSetRelationship('father')}
+                                disabled={others.includes(person.spouse || -1)}
                                 style={{
-                                    width: '100%',
                                     padding: '6px',
-                                    borderRadius: '4px',
+                                    background: others.includes(person.spouse || -1) ? '#222' : '#333',
+                                    color: others.includes(person.spouse || -1) ? '#666' : '#fff',
                                     border: '1px solid #555',
-                                    background: '#333',
-                                    color: 'white'
+                                    borderRadius: '4px',
+                                    cursor: others.includes(person.spouse || -1) ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                <option value="M">남성</option>
-                                <option value="F">여성</option>
-                            </select>
+                                [아버지]로 설정
+                            </button>
+                            <button
+                                onClick={() => handleSetRelationship('mother')}
+                                disabled={others.includes(person.spouse || -1)}
+                                style={{
+                                    padding: '6px',
+                                    background: others.includes(person.spouse || -1) ? '#222' : '#333',
+                                    color: others.includes(person.spouse || -1) ? '#666' : '#fff',
+                                    border: '1px solid #555',
+                                    borderRadius: '4px',
+                                    cursor: others.includes(person.spouse || -1) ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                [어머니]로 설정
+                            </button>
+                            <button
+                                onClick={handleSetSiblings}
+                                style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                                [형제/자매]로 설정
+                            </button>
+                            {selectedPersonKeys.length === 2 && (
+                                <>
+                                    <button
+                                        onClick={() => handleSetRelationship('spouse', 'married')}
+                                        style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        [결혼]으로 설정
+                                    </button>
+                                    <button
+                                        onClick={() => handleSetRelationship('spouse', 'divorced')}
+                                        style={{ padding: '6px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
+                                        [이혼]으로 설정
+                                    </button>
+                                </>
+                            )}
+                            {selectedPersonKeys.length >= 3 && (() => {
+                                const selectedPersons = selectedPersonKeys.map(k => familyData.find(p => p.key === k)).filter(p => !!p) as Person[];
+                                const husband = selectedPersons.find(p => p.gender === 'M' && p.spouse && selectedPersonKeys.includes(p.spouse));
+                                const wife = husband ? selectedPersons.find(p => p.key === husband.spouse) : null;
+                                if (husband && wife) {
+                                    return (
+                                        <button
+                                            onClick={handleSetAsChildren}
+                                            style={{ padding: '6px', background: '#22a6b3', color: '#fff', border: '1px solid #1dd1a1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                                        >
+                                            [{husband.name}·{wife.name}]의 [자녀]로 설정
+                                        </button>
+                                    );
+                                }
+                                return null;
+                            })()}
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    marginTop: '4px',
+                                    padding: '6px',
+                                    background: 'transparent',
+                                    color: '#ccc',
+                                    border: '1px solid #555',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                닫기
+                            </button>
                         </div>
                     </div>
+                )
+            }
 
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            {
+                !isMultiSelect && (
+                    <>
+                        <h3 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #555', paddingBottom: '8px', color: '#00d9ff' }}>
+                            인물 속성 편집
+                        </h3>
+
+                        <div style={{ marginBottom: '10px' }}>
+                            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>이름</label>
                             <input
-                                type="checkbox"
-                                checked={formData.deceased || false}
-                                onChange={(e) => handleChange('deceased', e.target.checked)}
+                                ref={nameInputRef}
+                                maxLength={10}
+                                value={formData.name || ''}
+                                onChange={(e) => handleChange('name', e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '6px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #555',
+                                    background: '#333',
+                                    color: 'white'
+                                }}
                             />
-                            사망
-                        </label>
-                    </div>
+                        </div>
 
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc' }}>속성 마커 (4분면)</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            <div>
-                                <label style={{ fontSize: '11px', color: '#aaa' }}>좌상단</label>
-                                <select
-                                    value={quadrants.tl}
-                                    onChange={(e) => handleQuadrantChange('tl', e.target.value)}
-                                    style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
-                                >
-                                    {attributeOptions.topLeft.map(opt => (
-                                        <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
-                                    ))}
-                                </select>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>나이</label>
+                                <input
+                                    type="number"
+                                    value={formData.age || ''}
+                                    onChange={(e) => handleChange('age', parseInt(e.target.value) || 0)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '6px',
+                                        borderRadius: '4px',
+                                        border: '1px solid #555',
+                                        background: '#333',
+                                        color: 'white'
+                                    }}
+                                />
                             </div>
-                            <div>
-                                <label style={{ fontSize: '11px', color: '#aaa' }}>우상단</label>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#ccc' }}>성별</label>
                                 <select
-                                    value={quadrants.tr}
-                                    onChange={(e) => handleQuadrantChange('tr', e.target.value)}
-                                    style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
+                                    value={formData.gender || 'M'}
+                                    onChange={(e) => handleChange('gender', e.target.value as Gender)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '6px',
+                                        borderRadius: '4px',
+                                        border: '1px solid #555',
+                                        background: '#333',
+                                        color: 'white'
+                                    }}
                                 >
-                                    {attributeOptions.topRight.map(opt => (
-                                        <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '11px', color: '#aaa' }}>좌하단</label>
-                                <select
-                                    value={quadrants.bl}
-                                    onChange={(e) => handleQuadrantChange('bl', e.target.value)}
-                                    style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
-                                >
-                                    {attributeOptions.bottomLeft.map(opt => (
-                                        <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '11px', color: '#aaa' }}>우하단</label>
-                                <select
-                                    value={quadrants.br}
-                                    onChange={(e) => handleQuadrantChange('br', e.target.value)}
-                                    style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
-                                >
-                                    {attributeOptions.bottomRight.map(opt => (
-                                        <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
-                                    ))}
+                                    <option value="M">남성</option>
+                                    <option value="F">여성</option>
                                 </select>
                             </div>
                         </div>
-                    </div>
 
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button
-                            onClick={handleDelete}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '4px',
-                                border: '1px solid #ff4757',
-                                background: 'rgba(255, 71, 87, 0.1)',
-                                color: '#ff4757',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            삭제
-                        </button>
-                        <button
-                            onClick={onClose}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '4px',
-                                border: '1px solid #555',
-                                background: 'transparent',
-                                color: '#ccc',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            취소
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            style={{
-                                padding: '6px 12px',
-                                borderRadius: '4px',
-                                border: 'none',
-                                background: '#00d9ff',
-                                color: '#000',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            저장
-                        </button>
-                    </div>
-                </>
-            )}
-        </div>
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.deceased || false}
+                                    onChange={(e) => handleChange('deceased', e.target.checked)}
+                                />
+                                사망
+                            </label>
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc' }}>속성 마커 (4분면)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                <div>
+                                    <label style={{ fontSize: '11px', color: '#aaa' }}>좌상단</label>
+                                    <select
+                                        value={quadrants.tl}
+                                        onChange={(e) => handleQuadrantChange('tl', e.target.value)}
+                                        style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
+                                    >
+                                        {attributeOptions.topLeft.map(opt => (
+                                            <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', color: '#aaa' }}>우상단</label>
+                                    <select
+                                        value={quadrants.tr}
+                                        onChange={(e) => handleQuadrantChange('tr', e.target.value)}
+                                        style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
+                                    >
+                                        {attributeOptions.topRight.map(opt => (
+                                            <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', color: '#aaa' }}>좌하단</label>
+                                    <select
+                                        value={quadrants.bl}
+                                        onChange={(e) => handleQuadrantChange('bl', e.target.value)}
+                                        style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
+                                    >
+                                        {attributeOptions.bottomLeft.map(opt => (
+                                            <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '11px', color: '#aaa' }}>우하단</label>
+                                    <select
+                                        value={quadrants.br}
+                                        onChange={(e) => handleQuadrantChange('br', e.target.value)}
+                                        style={{ width: '100%', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px' }}
+                                    >
+                                        {attributeOptions.bottomRight.map(opt => (
+                                            <option key={opt.value} value={opt.value} style={{ color: opt.color }}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={handleDelete}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ff4757',
+                                    background: 'rgba(255, 71, 87, 0.1)',
+                                    color: '#ff4757',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                삭제
+                            </button>
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #555',
+                                    background: 'transparent',
+                                    color: '#ccc',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '4px',
+                                    border: 'none',
+                                    background: '#00d9ff',
+                                    color: '#000',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                저장
+                            </button>
+                        </div>
+                    </>
+                )
+            }
+        </div >
     );
 }

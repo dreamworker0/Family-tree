@@ -9,6 +9,7 @@ import {
     ConnectionMode,
     Node,
     useReactFlow,
+    getNodesBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -53,6 +54,8 @@ export default function GenogramDiagram() {
     const exportData = useGenogramStore((state) => state.exportData);
     const updatePerson = useGenogramStore((state) => state.updatePerson);
     const clearAllPositions = useGenogramStore((state) => state.clearAllPositions);
+    const undo = useGenogramStore((state) => state.undo);
+    const redo = useGenogramStore((state) => state.redo);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const diagramRef = useRef<HTMLDivElement>(null);
@@ -173,25 +176,48 @@ export default function GenogramDiagram() {
         [updatePerson]
     );
 
-    // 이미지 저장
+    // 이미지 저장 (수정: 뷰포트 직접 캡처 및 좌표 보정)
     const handleExportImage = useCallback(() => {
         if (diagramRef.current === null) {
             return;
         }
 
-        // React Flow 뷰포트 요소 선택 (전체 다이어그램 캡처)
-        toPng(diagramRef.current, {
+        // React Flow 뷰포트 요소 찾기 (노드와 엣지가 들어있는 레이어)
+        const viewportElem = diagramRef.current.querySelector('.react-flow__viewport') as HTMLElement;
+        if (!viewportElem) {
+            console.error('뷰포트를 찾을 수 없습니다.');
+            return;
+        }
+
+        // 전체 노드의 경계 계산 (여백 포함)
+        const nodesBounds = getNodesBounds(nodes);
+
+        // 노드가 하나도 없는 경우 처리
+        if (nodesBounds.width === 0 || nodesBounds.height === 0) {
+            alert('저장할 인물이 없습니다.');
+            return;
+        }
+
+        const padding = 50; // 여백
+        const width = nodesBounds.width + padding * 2;
+        const height = nodesBounds.height + padding * 2;
+
+        // 뷰포트 요소를 직접 캡처
+        // transform을 강제로 설정하여 현재 줌/팬 상태와 무관하게 모든 노드가 (padding, padding) 위치에서 시작하도록 함
+        toPng(viewportElem, {
             cacheBust: true,
-            backgroundColor: '#f0f4f8',
-            filter: (node) => {
-                // 미니맵과 컨트롤 제외
-                const classList = node.classList;
-                if (!classList) return true;
-                if (classList.contains('react-flow__minimap') || classList.contains('react-flow__controls')) {
-                    return false;
-                }
-                return true;
-            }
+            backgroundColor: '#ffffff', // 배경 완전 흰색
+            width: width,
+            height: height,
+            pixelRatio: 3, // 인쇄용 고해상도 (기본 해상도의 3배)
+            style: {
+                width: `${width}px`,
+                height: `${height}px`,
+                // 1. 스케일을 1로 고정 (확대/축소 무시)
+                // 2. 가장 왼쪽/위쪽 노드가 (padding, padding)에 오도록 이동
+                transform: `translate(${-(nodesBounds.x - padding)}px, ${-(nodesBounds.y - padding)}px) scale(1)`,
+            },
+            // viewport만 찍으므로 그리드(background)나 컨트롤은 이미 제외됨. 별도 필터 불필요.
         })
             .then((dataUrl) => {
                 const link = document.createElement('a');
@@ -203,7 +229,7 @@ export default function GenogramDiagram() {
                 console.error('이미지 저장 실패:', err);
                 alert('이미지 저장 중 오류가 발생했습니다.');
             });
-    }, [diagramRef]);
+    }, [diagramRef, nodes]);
 
     // 레이아웃 재정렬
     const handleRelayout = useCallback(() => {
@@ -257,21 +283,66 @@ export default function GenogramDiagram() {
         }
     }, [reset]);
 
+    // 키보드 단축키
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // 입력 폼 내에서는 단축키 동작 안 함 (Ctrl+S, Ctrl+O 등 브라우저 기본 동작 방지 필요한 경우 제외...하지만 보통은 막는게 좋음)
+            // 하지만 Ctrl+S, Ctrl+O는 전역으로 동작시키는게 좋음. 
+            // 단, input/textarea focus일 때는 글자 입력에 방해되지 않는 선에서.
+            // 여기서는 Ctrl 조합키는 허용.
+
+            // 정렬: Alt + L
+            if (e.altKey && (e.key === 'l' || e.key === 'L')) {
+                e.preventDefault();
+                handleRelayout();
+            }
+            // 이미지 저장: Ctrl + E
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
+                e.preventDefault();
+                handleExportImage();
+            }
+            // 프로젝트 저장: Ctrl + S
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                handleExportProject();
+            }
+            // 불러오기: Ctrl + O
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
+                e.preventDefault();
+                fileInputRef.current?.click();
+            }
+            // 초기화: Ctrl + Alt + R
+            if ((e.ctrlKey || e.metaKey) && e.altKey && (e.key === 'r' || e.key === 'R')) {
+                e.preventDefault();
+                handleReset();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleRelayout, handleExportImage, handleExportProject, handleReset]);
+
     return (
         <div className="right-panel">
             <div className="diagram-header">
                 <div className="diagram-title">📊 가계도</div>
                 <div className="diagram-actions">
-                    <button className="btn btn-secondary" onClick={handleRelayout}>
+                    <button className="btn btn-secondary" onClick={undo} title="실행 취소 (Ctrl+Z)">
+                        ↩️ 실행 취소
+                    </button>
+                    <button className="btn btn-secondary" onClick={redo} title="다시 실행 (Ctrl+Shift+Z / Ctrl+Y)">
+                        ↪️ 다시 실행
+                    </button>
+                    <button className="btn btn-secondary" onClick={handleRelayout} title="자동 정렬 (Alt+L)">
                         📐 정렬
                     </button>
-                    <button className="btn btn-secondary" onClick={handleExportImage}>
+                    <button className="btn btn-secondary" onClick={handleExportImage} title="이미지로 저장 (Ctrl+E)">
                         💾 저장
                     </button>
-                    <button className="btn btn-secondary" onClick={handleExportProject}>
+                    <button className="btn btn-secondary" onClick={handleExportProject} title="프로젝트 파일 저장 (Ctrl+S)">
                         📄 프로젝트 저장
                     </button>
-                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }} title="프로젝트 불러오기 (Ctrl+O)">
                         📂 불러오기
                         <input
                             ref={fileInputRef}
@@ -281,7 +352,7 @@ export default function GenogramDiagram() {
                             onChange={handleImport}
                         />
                     </label>
-                    <button className="btn btn-danger" onClick={handleReset}>
+                    <button className="btn btn-danger" onClick={handleReset} title="전체 초기화 (Ctrl+Alt+R)">
                         🔄 초기화
                     </button>
                 </div>

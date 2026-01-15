@@ -8,6 +8,10 @@ interface GenogramState {
     nextKey: number;
     selectedPersonKeys: number[];
 
+    // Undo/Redo History
+    past: { familyData: Person[]; nextKey: number }[];
+    future: { familyData: Person[]; nextKey: number }[];
+
     // 액션
     addPerson: (person: Omit<Person, 'key'>) => number;
     updatePerson: (key: number, updates: Partial<Person>) => void;
@@ -18,6 +22,10 @@ interface GenogramState {
     importData: (data: GenogramData) => void;
     exportData: () => GenogramData;
     clearAllPositions: () => void;
+
+    // Undo/Redo Actions
+    undo: () => void;
+    redo: () => void;
 }
 
 // Zustand 스토어
@@ -27,8 +35,17 @@ export const useGenogramStore = create<GenogramState>()(
             familyData: [],
             nextKey: 1,
             selectedPersonKeys: [],
+            past: [],
+            future: [],
 
             addPerson: (personData) => {
+                const { familyData, nextKey, past } = get();
+                // Save history
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 const newKey = get().nextKey;
                 set((state) => {
                     const newPerson: Person = {
@@ -57,6 +74,14 @@ export const useGenogramStore = create<GenogramState>()(
             },
 
             updatePerson: (key, updates) => {
+                const { familyData, nextKey, past } = get();
+                // Save history only if there are actual changes
+                // (Optimized: Assuming updatePerson is called when changes are intended)
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 set((state) => {
                     const person = state.familyData.find((p) => p.key === key);
                     if (!person) return state;
@@ -64,7 +89,8 @@ export const useGenogramStore = create<GenogramState>()(
                     // 자기 자신을 부모로 설정하는지 체크
                     if (updates.father === key || updates.mother === key) {
                         console.warn('Cannot set self as parent.');
-                        return state;
+                        // revert history save if no change
+                        return { past: state.past };
                     }
 
                     // 순환 참조 체크 (자식이 부모가 되는 경우 방지)
@@ -80,7 +106,8 @@ export const useGenogramStore = create<GenogramState>()(
                     if ((updates.father && isDescendant(key, updates.father)) ||
                         (updates.mother && isDescendant(key, updates.mother))) {
                         console.warn('Circular reference detected: Cannot set descendant as parent.');
-                        return state;
+                        // revert history save if no change
+                        return { past: state.past };
                     }
 
                     let updatedFamilyData = state.familyData.map((p) => {
@@ -120,6 +147,13 @@ export const useGenogramStore = create<GenogramState>()(
             },
 
             deletePerson: (key) => {
+                const { familyData, nextKey, past } = get();
+                // Save history
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 set((state) => {
                     // 이 사람을 부모로 가진 자녀들의 부모 정보 제거
                     const updatedFamilyData = state.familyData
@@ -155,6 +189,13 @@ export const useGenogramStore = create<GenogramState>()(
             },
 
             reset: () => {
+                const { familyData, nextKey, past } = get();
+                // Save history
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 set({
                     familyData: [],
                     nextKey: 1,
@@ -163,6 +204,13 @@ export const useGenogramStore = create<GenogramState>()(
             },
 
             importData: (data) => {
+                const { familyData, nextKey, past } = get();
+                // Save history
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 set({
                     familyData: data.familyData,
                     nextKey: data.nextKey,
@@ -179,13 +227,60 @@ export const useGenogramStore = create<GenogramState>()(
                 };
             },
             clearAllPositions: () => {
+                const { familyData, nextKey, past } = get();
+                // Save history
+                set({
+                    past: [...past, { familyData, nextKey }],
+                    future: []
+                });
+
                 set((state) => ({
                     familyData: state.familyData.map((p) => ({ ...p, position: null })),
                 }));
             },
+
+            undo: () => {
+                set((state) => {
+                    if (state.past.length === 0) return state;
+
+                    const previous = state.past[state.past.length - 1];
+                    const newPast = state.past.slice(0, state.past.length - 1);
+
+                    return {
+                        past: newPast,
+                        future: [{ familyData: state.familyData, nextKey: state.nextKey }, ...state.future],
+                        familyData: previous.familyData,
+                        nextKey: previous.nextKey,
+                        selectedPersonKeys: [], // Clear selection on undo for simplicity
+                    };
+                });
+            },
+
+            redo: () => {
+                set((state) => {
+                    if (state.future.length === 0) return state;
+
+                    const next = state.future[0];
+                    const newFuture = state.future.slice(1);
+
+                    return {
+                        past: [...state.past, { familyData: state.familyData, nextKey: state.nextKey }],
+                        future: newFuture,
+                        familyData: next.familyData,
+                        nextKey: next.nextKey,
+                        selectedPersonKeys: [], // Clear selection on redo
+                    };
+                });
+            },
         }),
         {
             name: 'genogramFamilyData',
+            partialize: (state) => ({
+                familyData: state.familyData,
+                nextKey: state.nextKey,
+                selectedPersonKeys: state.selectedPersonKeys,
+                // past와 future는 영구 저장하지 않음 (새로고침 시 초기화)
+            }),
         }
     )
 );
