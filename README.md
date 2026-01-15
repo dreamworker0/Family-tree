@@ -2,7 +2,7 @@
 
 React와 React Flow를 기반으로 한 대화형 가계도(Genogram) 작성 애플리케이션입니다.
 
-![Genogram Builder](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue) ![Vite](https://img.shields.io/badge/Vite-6.0-purple)
+![Genogram Builder](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue) ![Vite](https://img.shields.io/badge/Vite-6.0-purple) ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black)
 
 ## ✨ 주요 기능
 
