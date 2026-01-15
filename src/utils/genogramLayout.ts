@@ -3,7 +3,7 @@ import type { Node, Edge } from '@xyflow/react';
 
 // === Layout Constants ===
 const NODE_WIDTH = 80;
-const NODE_HEIGHT = 80;
+// const NODE_HEIGHT = 80;
 const HORIZONTAL_SPACING = 30; // 간격 좁힘 (더 촘촘하게)
 const SPOUSE_SPACING = 50;     // 부부 사이 간격
 const VERTICAL_SPACING = 150;  // 세대 간격
