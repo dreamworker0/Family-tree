@@ -252,7 +252,7 @@ export function calculateGenogramLayout(familyData: Person[]): LayoutResult {
                         layoutNode(child, currentChildX, childY);
                         currentChildX += child.width + HORIZONTAL_SPACING;
                     });
-                    createTwinEdges(node, twinTrees, marriageNodeMap, nodes, edges);
+                    createTwinEdges(node, twinTrees, marriageNodeMap, edges);
                 }
             });
         }
@@ -421,9 +421,9 @@ function createTwinEdges(
     parentTree: TreeNode,
     twins: TreeNode[],
     marriageNodeMap: Map<string, string>,
-    nodes: Node[],
     edges: Edge[]
 ) {
+
     if (twins.length === 0) return;
 
     // 1. Calculate Source Point
