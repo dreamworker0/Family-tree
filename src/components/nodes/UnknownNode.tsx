@@ -3,7 +3,7 @@ import type { AttributeMarker } from '../../types/types';
 import { getAttributeColor, getQuadrant } from '../../utils/attributeColors';
 import './PersonNode.css';
 
-interface MaleNodeProps {
+interface UnknownNodeProps {
     data: {
         name: string;
         age?: number | null;
@@ -15,7 +15,7 @@ interface MaleNodeProps {
     selected?: boolean;
 }
 
-export default function MaleNode({ data, selected }: MaleNodeProps) {
+export default function UnknownNode({ data, selected }: UnknownNodeProps) {
     const { name, age, deceased, isAdopted, isFoster, attributes = [] } = data;
 
     // 속성 마커를 분면별로 분리
@@ -31,8 +31,8 @@ export default function MaleNode({ data, selected }: MaleNodeProps) {
     const borderClass = isAdopted ? 'adopted-border' : isFoster ? 'foster-border' : '';
 
     return (
-        <div className={`person-node male-node ${selected ? 'selected' : ''}`}>
-            <div className={`node-icon male-icon ${borderClass}`}>
+        <div className={`person-node unknown-node ${selected ? 'selected' : ''}`}>
+            <div className={`node-icon unknown-icon ${borderClass}`}>
                 {/* 연결 핸들 (Top) */}
                 <Handle
                     type="target"
@@ -55,10 +55,13 @@ export default function MaleNode({ data, selected }: MaleNodeProps) {
                     <div className="attr-quadrant br" style={{ backgroundColor: quadrantColors.bottomRight }} />
                 )}
 
+                {/* 성별 미상 표시 (?) */}
+                <span className="unknown-mark">?</span>
+
                 {/* 사망 표시 */}
                 {deceased && <div className="deceased-slash" />}
 
-                {/* 연결 핸들 (Bottom, Left, Right) - 아이콘 내부로 이동하여 경계에 밀착 */}
+                {/* 연결 핸들 (Bottom, Left, Right) */}
                 <Handle
                     type="source"
                     position={Position.Bottom}

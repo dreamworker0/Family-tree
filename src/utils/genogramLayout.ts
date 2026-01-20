@@ -173,14 +173,33 @@ export function calculateGenogramLayout(familyData: Person[]): LayoutResult {
         // If we want to respect manual positions, we would check person.position here.
         // But "Auto Layout" implies resetting positions. We'll use the calculated ones.
 
+        // 노드 타입 결정: Gender 및 birthStatus 기반
+        const getNodeType = (person: Person): string => {
+            // birthStatus가 있고 pregnancy/miscarriage/abortion이면 pregnancy 노드
+            if (person.birthStatus && person.birthStatus !== 'normal') {
+                return 'pregnancy';
+            }
+            switch (person.gender) {
+                case 'M': return 'male';
+                case 'F': return 'female';
+                case 'U': return 'unknown';
+                case 'P': return 'pet';
+                default: return 'male';
+            }
+        };
+
         nodes.push({
             id: String(node.person.key),
-            type: node.person.gender === 'M' ? 'male' : 'female',
+            type: getNodeType(node.person),
             position: { x: mainPersonX, y: y },
             data: {
                 name: node.person.name,
+                gender: node.person.gender,
                 age: node.person.age,
                 deceased: node.person.deceased,
+                isAdopted: node.person.isAdopted,
+                isFoster: node.person.isFoster,
+                birthStatus: node.person.birthStatus,
                 attributes: node.person.attributes || [],
             },
         });
@@ -190,12 +209,16 @@ export function calculateGenogramLayout(familyData: Person[]): LayoutResult {
             spouseX = mainPersonX + NODE_WIDTH + SPOUSE_SPACING;
             nodes.push({
                 id: String(node.spouse.key),
-                type: node.spouse.gender === 'M' ? 'male' : 'female',
+                type: getNodeType(node.spouse),
                 position: { x: spouseX, y: y },
                 data: {
                     name: node.spouse.name,
+                    gender: node.spouse.gender,
                     age: node.spouse.age,
                     deceased: node.spouse.deceased,
+                    isAdopted: node.spouse.isAdopted,
+                    isFoster: node.spouse.isFoster,
+                    birthStatus: node.spouse.birthStatus,
                     attributes: node.spouse.attributes || [],
                 },
             });
@@ -210,13 +233,27 @@ export function calculateGenogramLayout(familyData: Person[]): LayoutResult {
             let currentChildX = x + (node.width / 2) - (getChildrenTotalWidth(node) / 2);
             const childY = y + VERTICAL_SPACING;
 
-            node.children.forEach(child => {
-                layoutNode(child, currentChildX, childY);
+            // Group children logic (Twin Handling)
+            const groups = groupChildrenByTwin(node.children);
 
-                // Create Edge from Parents to Child
-                createChildEdge(node, child, marriageNodeMap, edges);
-
-                currentChildX += child.width + HORIZONTAL_SPACING;
+            groups.forEach(group => {
+                // If single child or no twin group (0 is falsy, but twinGroup is number | null)
+                // Assuming twinGroup is positive integer.
+                if (group.length === 1 || !group[0].person.twinGroup) {
+                    group.forEach(child => {
+                        layoutNode(child, currentChildX, childY);
+                        createChildEdge(node, child, marriageNodeMap, edges);
+                        currentChildX += child.width + HORIZONTAL_SPACING;
+                    });
+                } else {
+                    // Twin Group
+                    const twinTrees = group;
+                    twinTrees.forEach(child => {
+                        layoutNode(child, currentChildX, childY);
+                        currentChildX += child.width + HORIZONTAL_SPACING;
+                    });
+                    createTwinEdges(node, twinTrees, marriageNodeMap, nodes, edges);
+                }
             });
         }
     }
@@ -343,5 +380,101 @@ function createChildEdge(
         targetHandle: 'top',
         type: 'child',
         style: { stroke: 'gray', strokeWidth: 2 },
+        data: {
+            isAdopted: child.isAdopted,
+            isFoster: child.isFoster,
+        },
     });
+}
+
+function groupChildrenByTwin(children: TreeNode[]): TreeNode[][] {
+    const map = new Map<number, TreeNode[]>();
+    const singles: TreeNode[] = [];
+
+    // Separate twins and singles
+    children.forEach(c => {
+        if (c.person.twinGroup) {
+            if (!map.has(c.person.twinGroup)) map.set(c.person.twinGroup, []);
+            map.get(c.person.twinGroup)!.push(c);
+        } else {
+            singles.push(c);
+        }
+    });
+
+    const groups: TreeNode[][] = [];
+    // Add twins groups
+    map.forEach(g => groups.push(g));
+    // Add singles as individual groups
+    singles.forEach(s => groups.push([s]));
+
+    // Sort groups by age (oldest first/left)
+    groups.sort((a, b) => {
+        const ageA = a[0].person.age || 0;
+        const ageB = b[0].person.age || 0;
+        return ageB - ageA;
+    });
+
+    return groups;
+}
+
+function createTwinEdges(
+    parentTree: TreeNode,
+    twins: TreeNode[],
+    marriageNodeMap: Map<string, string>,
+    nodes: Node[],
+    edges: Edge[]
+) {
+    if (twins.length === 0) return;
+
+    // 1. Calculate Source Point
+    let sourceId: string;
+
+    if (parentTree.spouse) {
+        const mKey = `${parentTree.person.key}-${parentTree.spouse.key}`;
+        if (marriageNodeMap.has(mKey)) {
+            sourceId = marriageNodeMap.get(mKey)!;
+        } else {
+            sourceId = String(parentTree.person.key);
+        }
+    } else {
+        sourceId = String(parentTree.person.key);
+    }
+
+    // 2. 쌍둥이 ID 배열 생성
+    const twinIds = twins.map(t => String(t.person.key));
+    const isIdentical = twins[0].person.isIdenticalTwin || false;
+
+    // 3. 하나의 TwinEdge로 전체 그룹 연결
+    edges.push({
+        id: `twin-group-${twins[0].person.key}`,
+        source: sourceId,
+        target: twinIds[0],
+        sourceHandle: 'bottom',
+        targetHandle: 'top',
+        type: 'twin',
+        data: {
+            twinIds: twinIds,
+            isIdentical: isIdentical
+        },
+        style: { stroke: 'black', strokeWidth: 2 }
+    });
+
+
+    // 4. 일란성 쌍둥이인 경우: 도형(노드) 끼리 직접 연결하는 수평선 추가
+    if (isIdentical && twins.length > 1) {
+        for (let i = 0; i < twins.length - 1; i++) {
+            const current = twins[i].person;
+            const next = twins[i + 1].person;
+
+            edges.push({
+                id: `identical-link-${current.key}-${next.key}`,
+                source: String(current.key),
+                target: String(next.key),
+                sourceHandle: 'right', // 왼쪽 노드의 오른쪽 핸들
+                targetHandle: 'left',  // 오른쪽 노드의 왼쪽 핸들
+                type: 'default',       // 일반 직선
+                style: { stroke: 'black', strokeWidth: 2 },
+            });
+        }
+    }
 }

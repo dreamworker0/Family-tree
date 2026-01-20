@@ -93,6 +93,52 @@ export default function CustomMiniMap() {
                     const targetPos = getHandlePos(targetNode, drawTX, targetNode.position.y, edge.targetHandle);
 
                     const isDivorce = edge.data?.edgeType === 'divorced';
+                    if (edge.type === 'twin') {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const twinIds = (edge.data as any)?.twinIds as string[];
+                        if (!twinIds || twinIds.length === 0) return null;
+
+                        const twinNodes = twinIds
+                            .map((id) => nodes.find((n) => n.id === id))
+                            .filter((n) => n !== undefined);
+
+                        if (twinNodes.length === 0) return null;
+
+                        // 쌍둥이들의 상단 중앙 위치
+                        const twinPositions = twinNodes.map((tNode) => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const tW = tNode.measured?.width ?? tNode.width ?? iconSize; // any casting if needed
+                            const tXOffset = tW > iconSize ? (tW - iconSize) / 2 : 0;
+                            const tDrawX = tNode.position.x + tXOffset;
+                            // 일반 노드(Icon) 중심 기준 20(절반) + 핸들 위치? 
+                            // getHandlePos 로직 재사용: top 핸들이면 (x + 20, y)
+                            return getHandlePos(tNode, tDrawX, tNode.position.y, 'top');
+                        });
+
+                        // source(부모) 위치: bottom 핸들
+                        // sourcePos는 이미 계산됨 (getHandlePos 호출)
+
+                        // Hub 위치: 부모와 첫째 쌍둥이 사이의 53% 지점 (메인 뷰 TwinEdge 로직 참고)
+                        const firstChildY = twinPositions[0].y;
+                        const hubY = sourcePos.y + (firstChildY - sourcePos.y) * 0.53;
+                        const hubX = sourcePos.x;
+
+                        let pathD = `M ${sourcePos.x} ${sourcePos.y} L ${hubX} ${hubY} `;
+                        twinPositions.forEach((pos) => {
+                            pathD += `M ${hubX} ${hubY} L ${pos.x} ${pos.y} `;
+                        });
+
+                        return (
+                            <path
+                                key={edge.id}
+                                d={pathD}
+                                stroke="black"
+                                strokeWidth={2} // 조금 더 얇게
+                                fill="none"
+                            />
+                        );
+                    }
+
                     const isChildEdge = edge.type === 'child' || edge.type === 'smoothstep';
 
                     if (isChildEdge) {
@@ -116,6 +162,12 @@ export default function CustomMiniMap() {
                         );
                     }
 
+                    // 일란성 연결선 등 일반 직선
+                    // identical-link 체크
+                    const isIdenticalLink = edge.id.startsWith('identical-link');
+                    // 색상 결정: 이혼(빨강) > 일란성(검정) > 일반(파랑)
+                    const strokeColor = isDivorce ? 'red' : (isIdenticalLink ? 'black' : '#3498db');
+
                     return (
                         <line
                             key={edge.id}
@@ -123,9 +175,9 @@ export default function CustomMiniMap() {
                             y1={sourcePos.y}
                             x2={targetPos.x}
                             y2={targetPos.y}
-                            stroke={isDivorce ? 'red' : '#3498db'}
+                            stroke={strokeColor}
                             strokeDasharray={isDivorce ? '4,4' : undefined}
-                            strokeWidth={3}
+                            strokeWidth={isIdenticalLink ? 2 : 3}
                             strokeLinecap="round"
                         />
                     );
@@ -140,6 +192,50 @@ export default function CustomMiniMap() {
 
                     if (node.type === 'marriageNode') return null;
 
+                    // 임신 - 삼각형 (성별 색상)
+                    if (node.type === 'pregnancy') {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const gender = (node.data as any)?.gender;
+                        const fill = gender === 'F' ? '#e74c96' : '#3498db';
+                        return (
+                            <polygon
+                                key={node.id}
+                                points={`${drawX + 20},${drawY} ${drawX + 40},${drawY + 40} ${drawX},${drawY + 40}`}
+                                fill={fill}
+                            />
+                        );
+                    }
+
+                    // 성별 미상 - 물음표 텍스트
+                    if (node.type === 'unknown') {
+                        return (
+                            <text
+                                key={node.id}
+                                x={drawX + 20}
+                                y={drawY + 22}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#333"
+                                fontSize="24"
+                                fontWeight="bold"
+                            >
+                                ?
+                            </text>
+                        );
+                    }
+
+                    // 반려동물 - 마름모 (파란색)
+                    if (node.type === 'pet') {
+                        return (
+                            <polygon
+                                key={node.id}
+                                points={`${drawX + 20},${drawY} ${drawX + 40},${drawY + 20} ${drawX + 20},${drawY + 40} ${drawX},${drawY + 20}`}
+                                fill="#3498db"
+                            />
+                        );
+                    }
+
+                    // 여성 - 원 (분홍색)
                     if (node.type === 'female') {
                         return (
                             <circle
@@ -151,6 +247,8 @@ export default function CustomMiniMap() {
                             />
                         );
                     }
+
+                    // 남성 및 기본 - 사각형 (파란색)
                     return (
                         <rect
                             key={node.id}

@@ -18,8 +18,12 @@ import { calculateGenogramLayout } from '../utils/genogramLayout';
 import type { GenogramData } from '../types/types';
 import MaleNode from './nodes/MaleNode';
 import FemaleNode from './nodes/FemaleNode';
+import UnknownNode from './nodes/UnknownNode';
+import PetNode from './nodes/PetNode';
+import PregnancyNode from './nodes/PregnancyNode';
 import MarriageEdge from './edges/MarriageEdge';
 import ChildEdge from './edges/ChildEdge';
+import TwinEdge from './edges/TwinEdge';
 import Legend from './Legend';
 import './GenogramDiagram.css';
 import CustomMiniMap from './CustomMiniMap';
@@ -31,6 +35,9 @@ import PaneContextMenu from './PaneContextMenu';
 const nodeTypes = {
     male: MaleNode,
     female: FemaleNode,
+    unknown: UnknownNode,
+    pet: PetNode,
+    pregnancy: PregnancyNode,
     marriageNode: MarriageNode,
 };
 
@@ -38,7 +45,8 @@ const nodeTypes = {
 const edgeTypes = {
     marriage: MarriageEdge,
     divorced: MarriageEdge,
-    child: ChildEdge, // 등록
+    child: ChildEdge,
+    twin: TwinEdge, // 쌍둥이 연결선
 };
 
 export default function GenogramDiagram() {

@@ -137,6 +137,21 @@
   padding: 10px 0;
 }
 
+.status-group-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 5px 0;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.status-group-container .checkbox-group {
+  padding: 0;
+}
+
 .checkbox-group input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -261,6 +276,44 @@
   border: 2px solid #e74c96;
   border-radius: 50%;
 }
+
+.gender-unknown {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  font-weight: bold;
+}
+
+.gender-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.gender-pet {
+  background: rgba(251, 192, 45, 0.2);
+  color: #fbc02d;
+  border: 2px solid #fbc02d;
+  border-radius: 0;
+  transform: rotate(45deg);
+  margin: 0 4px;
+}
+
+/* 반려동물 아이콘 회전 시 내용물은 역회전 */
+.gender-pet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*.gender-pet > * {
+    transform: rotate(-45deg);
+}*/
+/* 이모지나 텍스트를 담을 경우 각도 조정이 필요할 수 있으나, 🐾는 그냥 둬도 됨.
+   다만 리스트 아이템 UI가 작아서 45도 회전 시 레이아웃 침범할 수 있으므로 마진 조정. */
 
 .family-item-name {
   font-weight: 500;

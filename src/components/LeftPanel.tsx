@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGenogramStore, useSelectedPerson } from '../store/useGenogramStore';
-import type { Gender, RelationStatus, AttributeMarker } from '../types/types';
+import type { Gender, RelationStatus, AttributeMarker, BirthStatus } from '../types/types';
 import { attributeOptions } from '../utils/attributeColors';
 import './LeftPanel.css';
 
@@ -9,6 +9,11 @@ interface FormState {
     age: string;
     gender: Gender;
     deceased: boolean;
+    isAdopted: boolean;
+    isFoster: boolean;
+    birthStatus: BirthStatus;
+    twinGroup: string;
+    isIdenticalTwin: boolean;
     father: string;
     mother: string;
     spouse: string;
@@ -25,6 +30,11 @@ const initialFormState: FormState = {
     age: '',
     gender: 'M',
     deceased: false,
+    isAdopted: false,
+    isFoster: false,
+    birthStatus: 'normal',
+    twinGroup: '',
+    isIdenticalTwin: false,
     father: '',
     mother: '',
     spouse: '',
@@ -64,6 +74,11 @@ export default function LeftPanel() {
                 age: selectedPerson.age?.toString() || '',
                 gender: selectedPerson.gender,
                 deceased: selectedPerson.deceased || false,
+                isAdopted: selectedPerson.isAdopted || false,
+                isFoster: selectedPerson.isFoster || false,
+                birthStatus: selectedPerson.birthStatus || 'normal',
+                twinGroup: selectedPerson.twinGroup?.toString() || '',
+                isIdenticalTwin: selectedPerson.isIdenticalTwin || false,
                 father: selectedPerson.father?.toString() || '',
                 mother: selectedPerson.mother?.toString() || '',
                 spouse: selectedPerson.spouse?.toString() || '',
@@ -107,6 +122,11 @@ export default function LeftPanel() {
             age: form.age ? parseInt(form.age) : null,
             gender: form.gender,
             deceased: form.deceased,
+            isAdopted: form.isAdopted,
+            isFoster: form.isFoster,
+            birthStatus: form.birthStatus,
+            twinGroup: form.twinGroup ? parseInt(form.twinGroup) : null,
+            isIdenticalTwin: form.isIdenticalTwin,
             father: form.father ? parseInt(form.father) : null,
             mother: form.mother ? parseInt(form.mother) : null,
             spouse: form.spouse ? parseInt(form.spouse) : null,
@@ -147,6 +167,11 @@ export default function LeftPanel() {
             age: form.age ? parseInt(form.age) : null,
             gender: form.gender,
             deceased: form.deceased,
+            isAdopted: form.isAdopted,
+            isFoster: form.isFoster,
+            birthStatus: form.birthStatus,
+            twinGroup: form.twinGroup ? parseInt(form.twinGroup) : null,
+            isIdenticalTwin: form.isIdenticalTwin,
             father: newFather,
             mother: newMother,
             spouse: finalSpouse,
@@ -246,17 +271,80 @@ export default function LeftPanel() {
                             >
                                 <option value="M">남성</option>
                                 <option value="F">여성</option>
+                                <option value="U">성별 미상</option>
+                                <option value="P">반려동물</option>
                             </select>
                         </div>
                     </div>
-                    <div className="checkbox-group">
-                        <input
-                            type="checkbox"
-                            id="personDeceased"
-                            checked={form.deceased}
-                            onChange={(e) => setForm({ ...form, deceased: e.target.checked })}
-                        />
-                        <label htmlFor="personDeceased">사망</label>
+
+                    {/* 추가 상태 정보 */}
+                    <div className="status-group-container">
+                        <div className="checkbox-group">
+                            <input
+                                type="checkbox"
+                                id="personDeceased"
+                                checked={form.deceased}
+                                onChange={(e) => setForm({ ...form, deceased: e.target.checked })}
+                            />
+                            <label htmlFor="personDeceased">사망</label>
+                        </div>
+
+                        <div className="checkbox-group">
+                            <input
+                                type="checkbox"
+                                id="personAdopted"
+                                checked={form.isAdopted}
+                                onChange={(e) => setForm({ ...form, isAdopted: e.target.checked })}
+                            />
+                            <label htmlFor="personAdopted">입양</label>
+                        </div>
+
+                        <div className="checkbox-group">
+                            <input
+                                type="checkbox"
+                                id="personFoster"
+                                checked={form.isFoster}
+                                onChange={(e) => setForm({ ...form, isFoster: e.target.checked })}
+                            />
+                            <label htmlFor="personFoster">위탁</label>
+                        </div>
+                    </div>
+
+                    <div className="form-row" style={{ marginTop: '10px' }}>
+                        <div className="form-group">
+                            <label>출생 상태</label>
+                            <select
+                                value={form.birthStatus}
+                                onChange={(e) => setForm({ ...form, birthStatus: e.target.value as BirthStatus })}
+                            >
+                                <option value="normal">정상</option>
+                                <option value="pregnancy">임신 중</option>
+                                <option value="miscarriage">자연유산</option>
+                                <option value="abortion">인공임신중절</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>쌍둥이 그룹 ID (숫자)</label>
+                            <input
+                                type="number"
+                                placeholder="예: 1"
+                                min="1"
+                                value={form.twinGroup}
+                                onChange={(e) => setForm({ ...form, twinGroup: e.target.value })}
+                            />
+                        </div>
+                        <div className="checkbox-group" style={{ marginTop: '28px', flex: '0 0 auto' }}>
+                            <input
+                                type="checkbox"
+                                id="identicalTwin"
+                                checked={form.isIdenticalTwin}
+                                onChange={(e) => setForm({ ...form, isIdenticalTwin: e.target.checked })}
+                            />
+                            <label htmlFor="identicalTwin">일란성</label>
+                        </div>
                     </div>
                 </div>
 
@@ -461,9 +549,42 @@ export default function LeftPanel() {
                                     }}
                                 >
                                     <div className="family-item-info">
-                                        <div className={`gender-icon gender-${person.gender === 'M' ? 'male' : 'female'}`}>
-                                            {person.gender === 'M' ? '♂' : '♀'}
-                                        </div>
+                                        {(person.birthStatus && person.birthStatus !== 'normal') ? (
+                                            <div className="gender-icon-wrapper">
+                                                <svg width="24" height="24" viewBox="0 0 40 40">
+                                                    <polygon
+                                                        points="20,2 38,38 2,38"
+                                                        fill="rgba(255, 255, 255, 0.2)"
+                                                        stroke="#aaa"
+                                                        strokeWidth="3"
+                                                    />
+                                                    {person.birthStatus === 'miscarriage' && (
+                                                        <g stroke="#aaa" strokeWidth="3">
+                                                            <line x1="12" y1="14" x2="28" y2="30" />
+                                                            <line x1="28" y1="14" x2="12" y2="30" />
+                                                        </g>
+                                                    )}
+                                                    {person.birthStatus === 'abortion' && (
+                                                        <g stroke="#aaa" strokeWidth="3">
+                                                            <line x1="8" y1="15" x2="32" y2="15" />
+                                                            <line x1="14" y1="9" x2="26" y2="25" />
+                                                            <line x1="26" y1="9" x2="14" y2="25" />
+                                                        </g>
+                                                    )}
+                                                </svg>
+                                            </div>
+                                        ) : (
+                                            <div className={`gender-icon gender-${person.gender === 'M' ? 'male' :
+                                                person.gender === 'F' ? 'female' :
+                                                    person.gender === 'P' ? 'pet' : 'unknown'
+                                                }`}>
+                                                {
+                                                    person.gender === 'M' ? '♂' :
+                                                        person.gender === 'F' ? '♀' :
+                                                            person.gender === 'P' ? '🐾' : '?'
+                                                }
+                                            </div>
+                                        )}
                                         <div>
                                             <div className="family-item-name">{person.name}</div>
                                             <div className="family-item-age">{(person.age !== null && person.age !== undefined) ? `${person.age}세` : ''}</div>

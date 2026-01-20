@@ -64,3 +64,86 @@
     left: -4px;
     transform: rotate(-45deg);
 }
+
+.legend-unknown {
+    background: #fff;
+    border: 2px solid #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #666;
+    font-size: 14px;
+}
+
+.legend-pet {
+    background: #fff;
+    border: 2px solid #919191;
+    transform: rotate(45deg);
+}
+
+.legend-pregnancy {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #fff;
+    position: relative;
+}
+
+.legend-pregnancy::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 2px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #919191;
+    z-index: -1;
+}
+
+.legend-miscarriage {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #fff;
+    position: relative;
+}
+
+.legend-miscarriage::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 2px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #919191;
+    z-index: -1;
+}
+
+.legend-miscarriage::before {
+    content: 'X';
+    position: absolute;
+    top: 7px;
+    left: -4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+}
+
+.legend-adopted {
+    border-top: 2px dashed #2196F3;
+    background: transparent;
+    height: 0;
+}
+
+.legend-foster {
+    border-top: 2px dashed #4CAF50;
+    background: transparent;
+    height: 0;
+}

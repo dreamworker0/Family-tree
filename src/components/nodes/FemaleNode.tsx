@@ -8,13 +8,15 @@ interface FemaleNodeProps {
         name: string;
         age?: number | null;
         deceased?: boolean;
+        isAdopted?: boolean;
+        isFoster?: boolean;
         attributes?: AttributeMarker[];
     };
     selected?: boolean;
 }
 
 export default function FemaleNode({ data, selected }: FemaleNodeProps) {
-    const { name, age, deceased, attributes = [] } = data;
+    const { name, age, deceased, isAdopted, isFoster, attributes = [] } = data;
 
     // 속성 마커를 분면별로 분리
     const quadrantColors: Record<string, string> = {};
@@ -25,9 +27,12 @@ export default function FemaleNode({ data, selected }: FemaleNodeProps) {
         }
     });
 
+    // 테두리 클래스 결정
+    const borderClass = isAdopted ? 'adopted-border' : isFoster ? 'foster-border' : '';
+
     return (
         <div className={`person-node female-node ${selected ? 'selected' : ''}`}>
-            <div className="node-icon female-icon">
+            <div className={`node-icon female-icon ${borderClass}`}>
                 {/* 연결 핸들 (Top) */}
                 <Handle
                     type="target"

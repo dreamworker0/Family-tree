@@ -7,60 +7,61 @@ export default function ChildEdge({
     targetY,
     style = {},
     markerEnd,
+    data,
 }: EdgeProps) {
-    // 2/3 지점에서 꺾이도록 center Y 계산
-    // sourceY (위) ~ targetY (아래) 사이의 거리를 계산
+    // data prop에서 속성 추출
+    const isAdopted = data?.isAdopted;
+    const isFoster = data?.isFoster;
+    const isTwin = data?.isTwin;
+    const isStem = data?.isStem; // stem 연결선 (부모 -> TwinHub)
 
-    // 만약 getSmoothStepPath가 centerY를 지원하지 않거나 의도대로 동작하지 않으면 직접 path를 그려야 함.
-    // React Flow 12+ 에서는 pathOptions에 centerY가 있을 수 있음.
-    // 하지만 확실하지 않으므로 직접 path를 계산하는 로직을 fallback으로 고려할 수 있음.
-    // 여기서는 일단 직접 path string을 구성하는 것이 가장 확실함.
-
-    // 직접 Path 계산 (SmoothStep 흉내)
-    // M sx sy L sx splitY Q sx splitY, ... (radius logic needed)
-    // 간단하게 radius 없이 테스트하거나, radius 구현.
-
-    // Radius 구현이 복잡하므로 일단 getSmoothStepPath의 centerY 활용 시도해보고, 
-    // Typescript 에러가 나거나 동작 안하면 수동 구현으로 변경.
-    // @xyflow/react의 getSmoothStepPath 시그니처 확인이 어려우므로
-    // 안전하게 커스텀 패스 로직을 작성합니다.
-
-    const radius = 5;
-    const splitY = sourceY + Math.abs(targetY - sourceY) * 0.67; // 약 2/3 지점
-
-    // Custom Path Logic with Radius
     let path = '';
 
-    // 1. Start
-    path += `M ${sourceX} ${sourceY}`;
-
-    // 2. Vertical down to splitY
-    // We need to stop before splitY by radius if we are going to turn
-    // If sourceX == targetX, straight line
-    if (Math.abs(sourceX - targetX) < 1) {
-        path += ` L ${targetX} ${targetY}`;
+    // 쌍둥이 연결선 또는 stem 연결선은 직선
+    if (isTwin || isStem) {
+        path = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
     } else {
-        // Source Vertical Segment
-        const turn1Y = splitY - radius;
-        path += ` L ${sourceX} ${turn1Y}`;
+        // 기존 ChildEdge 곡선 로직
+        const radius = 5;
+        const splitY = sourceY + Math.abs(targetY - sourceY) * 0.67;
 
-        // Turn 1
-        // Determine direction
-        const isRight = targetX > sourceX;
-        path += ` Q ${sourceX} ${splitY} ${sourceX + (isRight ? radius : -radius)} ${splitY}`;
+        path += `M ${sourceX} ${sourceY}`;
 
-        // Horizontal Segment
-        const turn2X = targetX + (isRight ? -radius : radius);
-        path += ` L ${turn2X} ${splitY}`;
+        if (Math.abs(sourceX - targetX) < 1) {
+            path += ` L ${targetX} ${targetY}`;
+        } else {
+            const turn1Y = splitY - radius;
+            path += ` L ${sourceX} ${turn1Y}`;
 
-        // Turn 2
-        path += ` Q ${targetX} ${splitY} ${targetX} ${splitY + radius}`;
+            const isRight = targetX > sourceX;
+            path += ` Q ${sourceX} ${splitY} ${sourceX + (isRight ? radius : -radius)} ${splitY}`;
 
-        // Target Vertical Segment
-        path += ` L ${targetX} ${targetY}`;
+            const turn2X = targetX + (isRight ? -radius : radius);
+            path += ` L ${turn2X} ${splitY}`;
+
+            path += ` Q ${targetX} ${splitY} ${targetX} ${splitY + radius}`;
+            path += ` L ${targetX} ${targetY}`;
+        }
+    }
+
+    let edgeStyle = { ...style };
+
+    // 입양/위탁 스타일 적용
+    if (isAdopted) {
+        edgeStyle = {
+            ...edgeStyle,
+            stroke: '#2196F3', // Blue
+            strokeDasharray: '5,5',
+        };
+    } else if (isFoster) {
+        edgeStyle = {
+            ...edgeStyle,
+            stroke: '#4CAF50', // Green
+            strokeDasharray: '5,5',
+        };
     }
 
     return (
-        <BaseEdge path={path} markerEnd={markerEnd} style={style} />
+        <BaseEdge path={path} markerEnd={markerEnd} style={edgeStyle} />
     );
 }

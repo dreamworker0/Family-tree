@@ -138,3 +138,114 @@
 .person-node:hover .react-flow__handle {
     opacity: 0.5;
 }
+
+/* 성별 미상 노드 - 사각형 + ? 표시 */
+.unknown-icon {
+    border-radius: 0;
+    position: relative;
+}
+
+.unknown-mark {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    color: #666;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* 성별 미상 노드 - 도형 없음 (물음표만) */
+.unknown-icon {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 리스트 아이콘 - 성별 미상 */
+.gender-unknown {
+    background: transparent;
+    color: #666;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.pet-icon {
+    border-radius: 0;
+    transform: rotate(45deg);
+}
+
+.pet-node .node-label {
+    /* 마름모의 회전에 영향받지 않도록 라벨은 그대로 유지 */
+    transform: none;
+}
+
+/* 반려동물 속성 마커 (마름모에 맞춤) */
+.attr-diamond {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+}
+
+.attr-diamond.tl {
+    top: 0;
+    left: 0;
+}
+
+.attr-diamond.tr {
+    top: 0;
+    right: 0;
+}
+
+.attr-diamond.bl {
+    bottom: 0;
+    left: 0;
+}
+
+.attr-diamond.br {
+    bottom: 0;
+    right: 0;
+}
+
+/* 임신 노드 - 삼각형 */
+/* 임신 노드 (SVG 기반) */
+.pregnancy-node {
+    width: 80px;
+    height: 80px;
+    /* SVG 40 + Label space */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    /* 기본 person-node 스타일 제거 */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.pregnancy-svg {
+    width: 40px;
+    height: 40px;
+    /* SVG 자체는 투명 배경, 폴리곤이 흰색 채움 */
+    overflow: visible;
+}
+
+/* 유산/중절 마크는 이제 SVG 내부에서 처리되므로 CSS 클래스 불필요 */
+/* .miscarriage-mark, .abortion-mark styles removed */
+
+
+/* 입양 아동 테두리 (파란 점선) */
+.adopted-border {
+    border-style: dashed !important;
+    border-color: #2196F3 !important;
+    border-width: 2px !important;
+}
+
+/* 위탁 아동 테두리 (초록 점선) */
+.foster-border {
+    border-style: dashed !important;
+    border-color: #4CAF50 !important;
+    border-width: 2px !important;
+}
