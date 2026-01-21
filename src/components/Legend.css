@@ -1,10 +1,76 @@
-.legend {
+/* Legend.css */
+.legend-root {
+    /* LeftPanel과 유사한 어두운 배경 및 블러 효과 */
+    background: rgba(15, 15, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+
     display: flex;
+    flex-direction: column;
+    position: relative;
+    /* 탭 버튼 배치를 위한 기준점 */
+    transition: transform 0.3s ease;
+    z-index: 90;
+    /* 다른 요소 위에 표시되도록 */
+}
+
+/* 탭 버튼 스타일 (왼쪽 패널 버튼과 디자인 통일) */
+.legend-toggle-tab {
+    position: absolute;
+    top: -28px;
+    /* 버튼 높이 + 여유 */
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 80px;
+    height: 28px;
+
+    background-color: #0f0f1e;
+    /* 패널과 동일한 배경색 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    /* 하단을 터서 패널과 연결된 느낌 */
+    border-radius: 8px 8px 0 0;
+    /* 위쪽 둥근 모서리 */
+
+    color: #00d9ff;
+    /* 청록색 텍스트 */
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    /* 아이콘과 텍스트 사이 간격 */
+
+    cursor: pointer;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+    /* 위쪽 그림자 */
+    transition: all 0.2s ease;
+    z-index: 91;
+}
+
+.legend-toggle-tab:hover {
+    background-color: #1a1a2e;
+    color: #fff;
+    padding-bottom: 2px;
+    /* 살짝 올라오는 효과 느낌 */
+}
+
+/* 접힌 상태 */
+.legend-root.collapsed .legend-content {
+    display: none;
+}
+
+/* 펼쳐진 상태 */
+.legend-content {
+    display: flex;
+    flex-wrap: wrap;
     gap: 20px;
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-wrap: wrap;
+    justify-content: center;
+    /* 아이템 중앙 정렬 */
 }
 
 .legend-item {
@@ -81,6 +147,9 @@
     border: 2px solid #919191;
     transform: rotate(45deg);
 }
+
+/* 45도 회전된 pet 박스 안에서 ? 모양 등이 제대로 보이려면... 
+   현재는 빈 박스이므로 상관없음. */
 
 .legend-pregnancy {
     width: 0;

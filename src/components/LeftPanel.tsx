@@ -228,7 +228,7 @@ export default function LeftPanel() {
                 onClick={() => setCollapsed(!collapsed)}
                 title={collapsed ? '사이드바 열기' : '사이드바 접기'}
             >
-                {collapsed ? '▶' : '◀'}
+                {collapsed ? '▶' : '◀'} 편집창
             </button>
             <div className="panel-content">
                 <h1 className="panel-title">🌳 가계도 만들기</h1>
