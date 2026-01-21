@@ -419,9 +419,17 @@ export default function GenogramDiagram() {
                             title={isInteractive ? "이동/편집 잠금" : "이동/편집 허용"}
                         >
                             {isInteractive ? (
-                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                // 잠금 해제 (편집 가능) - 열린 자물쇠
+                                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ fill: 'none' }}>
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0"></path>
+                                </svg>
                             ) : (
-                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                                // 잠금 (편집 불가) - 닫힌 자물쇠
+                                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ fill: 'none' }}>
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
                             )}
                         </ControlButton>
                     </Controls>
