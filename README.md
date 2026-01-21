@@ -8,9 +8,11 @@ React와 React Flow를 기반으로 한 대화형 가계도(Genogram) 작성 애
 
 ### 가족 구성원 관리
 - **추가/수정/삭제**: 가족 구성원을 손쉽게 관리
-- **기본 정보 입력**: 이름, 나이, 성별, 사망 여부
+- **기본 정보 입력**: 이름, 나이, 성별(남/여/미상/반려동물), 사망 여부
 - **가족 관계 설정**: 부모, 배우자, 형제/자매 관계 지정
 - **관계 상태**: 결혼/이혼 상태 표시
+- **특수 상태**: 임신, 유산, 중절, 입양, 위탁, 쌍둥이 관계 표현
+
 
 ### 가계도 시각화
 - **드래그 앤 드롭**: 노드를 자유롭게 이동하여 배치
@@ -79,9 +81,14 @@ Family-tree/
 │   │   ├── nodes/          # 커스텀 노드 컴포넌트
 │   │   │   ├── MaleNode.tsx
 │   │   │   ├── FemaleNode.tsx
-│   │   │   └── MarriageNode.tsx
+│   │   │   ├── MarriageNode.tsx
+│   │   │   ├── UnknownNode.tsx
+│   │   │   ├── PetNode.tsx
+│   │   │   └── PregnancyNode.tsx
 │   │   ├── edges/          # 커스텀 엣지 컴포넌트
-│   │   │   └── MarriageEdge.tsx
+│   │   │   ├── MarriageEdge.tsx
+│   │   │   ├── ChildEdge.tsx
+│   │   │   └── TwinEdge.tsx
 │   │   ├── GenogramDiagram.tsx   # 메인 다이어그램 캔버스
 │   │   ├── LeftPanel.tsx         # 좌측 입력 패널
 │   │   ├── Legend.tsx            # 범례
@@ -134,9 +141,15 @@ Family-tree/
 |------|------|
 | □ | 남성 |
 | ○ | 여성 |
+| ? | 성별 미상 |
+| ◇ | 반려동물 |
 | ━ | 결혼 |
 | ╱╱ | 이혼 |
 | ╳ | 사망 |
+| △ | 임신 |
+| ● | 자연유산 |
+| ⨉ | 인공임신중절 |
+| ┄ | 입양/위탁 |
 
 ## 📄 라이선스
 
